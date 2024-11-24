@@ -3,7 +3,7 @@ const { Bot } = require('grammy');
 const schedule = require("node-schedule");
 
 const bot = new Bot(process.env.BOT_API_KEY);
-let chats = [];
+const chats = path.join(__dirname, 'chats.json'); // файл с контактами
 
 bot.command('start', async (ctx) => {
 
