@@ -8,18 +8,26 @@ const bot = new Bot(process.env.BOT_API_KEY);
 const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
 
 // ДОСТАЕМ СПИСОК КОНТАКТОВ ИЗ ФАЙЛА
-function ImportChats () {
-    if (fs.existsSync(chats)) {
-        return JSON.parse(fs.readFileSync(chats, 'utf8'));
+function importChats () {
+    if (fs.existsSync(chatsList)) {
+        return JSON.parse(fs.readFileSync(chatsList, 'utf8'));
     }
     return [];
 }
+
+// ЗАПИСЫВАЕМ КОНТАКТЫ В ФАЙЛ
+function exportChats(chats) {
+    fs.writeFileSync(chatsList, JSON.stringify(chats, null, 2), 'utf8');
+}
+
+let chats = importChats();
 
 bot.command('start', async (ctx) => {
 
     // если нет чата в списке контактов, добавляем
     if (!chats.some(chat => chat === ctx.chat.id)) {
         chats.push(ctx.chat.id);
+        exportChats(chats)
     }
 
     // приветственное сообщение
@@ -31,7 +39,7 @@ bot.command('start', async (ctx) => {
 schedule.scheduleJob("*/1 * * * *", () => {
     try {
         chats.forEach((userId) => {
-            bot.api.sendMessage(userId, "Тестирование по времени");
+            bot.api.sendMessage(userId, "Стахий черт");
         });
     } catch (error) {
         console.error("Error occurred while sending hourly update:", error);
