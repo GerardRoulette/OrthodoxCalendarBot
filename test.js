@@ -5,7 +5,7 @@ const path = require('path');
 const date = path.join(__dirname, 'date.json');
 
 
-async function getData() {
+{/*async function getData() {
   const url = "https://azbyka.ru/days/api/day?date%5Bexact%5D=2024-11-25";
   try {
     const response = await fetch(url, {
@@ -25,4 +25,4 @@ async function getData() {
   }
 }
 
-getData()
+getData() */}
