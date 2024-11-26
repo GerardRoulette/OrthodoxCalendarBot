@@ -6,6 +6,7 @@ const path = require('path');
 
 const bot = new Bot(process.env.BOT_API_KEY);
 const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
+const date = path.join(__dirname, 'date.json'); // API/DAY запрос, святые дня
 
 // ДОСТАЕМ СПИСОК КОНТАКТОВ ИЗ ФАЙЛА
 function importChats () {
@@ -22,6 +23,10 @@ function exportChats(chats) {
 
 let chats = importChats();
 
+
+
+
+
 bot.command('start', async (ctx) => {
 
     // если нет чата в списке контактов, добавляем
@@ -36,7 +41,7 @@ bot.command('start', async (ctx) => {
     );
 });
 
-schedule.scheduleJob("*/1 * * * *", () => {
+schedule.scheduleJob("15 * * * *", () => {
     try {
         chats.forEach((userId) => {
             bot.api.sendMessage(userId, "Стахий черт");
