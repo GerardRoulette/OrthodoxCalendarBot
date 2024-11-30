@@ -1,6 +1,7 @@
 .env
 chats.json
-date.json
+saintsOfToday.json
+textsOfToday.json
 # Ignore logs
 *.log
 

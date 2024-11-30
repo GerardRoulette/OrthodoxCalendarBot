@@ -8,6 +8,8 @@ const bot = new Bot(process.env.BOT_API_KEY);
 const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
 const saintsOfToday = path.join(__dirname, 'saintsOfToday.json'); // API/DAY запрос, святые дня
 const textsOfToday = path.join(__dirname, 'textsOfToday.json') // API
+let texts = '-'; // тут лежит чтение Евангелий и Апостола
+
 
 
 // ДОСТАЕМ СПИСОК КОНТАКТОВ ИЗ ФАЙЛА
@@ -18,13 +20,13 @@ function importChats() {
     return [];
 }
 
-// СКАЧИВАЕМ ДАННЫЕ в 0-05 ("5 0 * * *"), запись в файл 
-schedule.scheduleJob("5 0 * * *", () => {
+// СКАЧИВАЕМ ДАННЫЕ в 3-05 ("5 3 * * *"), запись в файл 
+schedule.scheduleJob("*/1 * * * *", () => {
     try {
         let today = new Date();
         let year = today.getUTCFullYear();
-        let month = today.getUTCMonth() + 1;
-        let day = today.getUTCDate();
+        let month = (today.getUTCMonth() + 1).toString().padStart(2, '0'); 
+        let day = today.getUTCDate().toString().padStart(2, '0');
         async function getSaintsFromAzbyka() {
             const url = `https://azbyka.ru/days/api/day?date%5Bexact%5D=${year}-${month}-${day}`;
             try {
@@ -34,18 +36,66 @@ schedule.scheduleJob("5 0 * * *", () => {
                     }
                 });
                 if (!response.ok) {
-                    throw new Error(`Response status: ${response.status} --- ${response.text}`);
+                    throw new Error(`SAINTS - Response status: ${response.status} --- ${response.text}`);
                 }
 
                 const json = await response.json();
                 fs.writeFileSync(saintsOfToday, JSON.stringify(json, null, 2), 'utf8');
             } catch (error) {
+                bot.api.sendMessage(96498103, "Не удалось скачать данные с Азбуки - святые"); // мой чат айди
                 console.error(error.message);
             }
         }
+
         setTimeout(getSaintsFromAzbyka, 1000); // НА ВСЯКИЙ, ВДРУГ СПАМ ФИЛЬТР
 
-        
+        async function getTextsFromAzbyka() {
+            const url = `https://azbyka.ru/days/api/cache_dates?date%5Bexact%5D=${year}-${month}-${day}`;
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'authorization': `Bearer ${process.env.AZBYKA_API_KEY}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error(`TEXTS - Response status: ${response.status} --- ${response.text}`);
+                }
+
+                const json = await response.json();
+                return await json;
+            } catch (error) {
+                bot.api.sendMessage(96498103, "Не удалось скачать данные с Азбуки - тексты"); // мой чат айди
+                console.error(error.message);
+            }
+        }
+        function getTextIdsWithType1(data) {
+            return data.flatMap(item =>
+                item.abstractDate.texts.filter(text => text.type === 1).map(text => text.id)
+            );
+        }
+
+        async function getTodayBibleReading() {
+            let jsonWithTextIds = await getTextsFromAzbyka();
+            let todayBibleId = getTextIdsWithType1(jsonWithTextIds);
+            const url = `https://azbyka.ru/days/api/texts/${todayBibleId.join()}`;
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'authorization': `Bearer ${process.env.AZBYKA_API_KEY}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error(`TEXTS - Response status: ${response.status} --- ${response.text}`);
+                }
+
+                const json = await response.json();
+                texts = json.text
+            } catch (error) {
+                bot.api.sendMessage(96498103, "Не удалось скачать данные с Азбуки - тексты"); // мой чат айди
+                console.error(error.message);
+            }
+        }
+        getTodayBibleReading();
 
     } catch (error) {
         console.error(error.message);
@@ -58,9 +108,6 @@ function exportChats(chats) {
 }
 
 let chats = importChats();
-
-
-
 
 
 bot.command('start', async (ctx) => {
