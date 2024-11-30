@@ -3,22 +3,16 @@ const { Bot } = require('grammy');
 const schedule = require("node-schedule");
 const fs = require('fs');
 const path = require('path');
+const { setTimeout } = require('timers/promises');
 
-const bot = new Bot(process.env.BOT_API_KEY);
+const bot = new Bot(process.env.BOT_API_KEY); // инициализация бота
 const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
-const saintsOfToday = path.join(__dirname, 'saintsOfToday.json'); // API/DAY запрос, святые дня
-const textsOfToday = path.join(__dirname, 'textsOfToday.json') // API
-let texts = '-'; // тут лежит чтение Евангелий и Апостола
+const saintsOfToday = path.join(__dirname, 'saintsOfToday.json'); // API/DAY запрос, святые и праздники дня
+let texts = '-'; // тут лежит чтение Евангелий и Апостола, ссылки на Библию
 
-
-
-// ДОСТАЕМ СПИСОК КОНТАКТОВ ИЗ ФАЙЛА
-function importChats() {
-    if (fs.existsSync(chatsList)) {
-        return JSON.parse(fs.readFileSync(chatsList, 'utf8'));
-    }
-    return [];
-}
+/* 
+ЗАПРОС ДАННЫХ С АЗБУКИ
+*/
 
 // СКАЧИВАЕМ ДАННЫЕ в 3-05 ("5 3 * * *"), запись в файл 
 schedule.scheduleJob("*/1 * * * *", () => {
@@ -27,7 +21,7 @@ schedule.scheduleJob("*/1 * * * *", () => {
         let year = today.getUTCFullYear();
         let month = (today.getUTCMonth() + 1).toString().padStart(2, '0'); 
         let day = today.getUTCDate().toString().padStart(2, '0');
-        async function getSaintsFromAzbyka() {
+        async function getSaintsFromAzbyka() { // достаем по новому АПИ запросу святых и праздники дня
             const url = `https://azbyka.ru/days/api/day?date%5Bexact%5D=${year}-${month}-${day}`;
             try {
                 const response = await fetch(url, {
@@ -36,7 +30,9 @@ schedule.scheduleJob("*/1 * * * *", () => {
                     }
                 });
                 if (!response.ok) {
-                    throw new Error(`SAINTS - Response status: ${response.status} --- ${response.text}`);
+                    setTimeout(getSaintsFromAzbyka, 120000)
+                    throw new Error(`API DAY - Response status: ${response.status} --- ${response.text}`);
+                    
                 }
 
                 const json = await response.json();
@@ -47,9 +43,9 @@ schedule.scheduleJob("*/1 * * * *", () => {
             }
         }
 
-        setTimeout(getSaintsFromAzbyka, 1000); // НА ВСЯКИЙ, ВДРУГ СПАМ ФИЛЬТР
+        setTimeout(getSaintsFromAzbyka, 3000); // НА ВСЯКИЙ, ВДРУГ СПАМ ФИЛЬТР
 
-        async function getTextsFromAzbyka() {
+        async function getTextsFromAzbyka() { // CКАЧИВАЕМ ПО СТАРОМУ АПИ РАДИ ССЫЛОК НА БИБЛИЮ
             const url = `https://azbyka.ru/days/api/cache_dates?date%5Bexact%5D=${year}-${month}-${day}`;
             try {
                 const response = await fetch(url, {
@@ -58,23 +54,23 @@ schedule.scheduleJob("*/1 * * * *", () => {
                     }
                 });
                 if (!response.ok) {
-                    throw new Error(`TEXTS - Response status: ${response.status} --- ${response.text}`);
+                    throw new Error(`CACHE DATE - Response status: ${response.status} --- ${response.text}`);
                 }
 
                 const json = await response.json();
-                return await json;
+                return await json; // просто возвращаем json, чтобы его распилить и достать текст с id 1
             } catch (error) {
                 bot.api.sendMessage(96498103, "Не удалось скачать данные с Азбуки - тексты"); // мой чат айди
                 console.error(error.message);
             }
         }
-        function getTextIdsWithType1(data) {
+        function getTextIdsWithType1(data) { // фильтруем большой json и достаем текст с id 1
             return data.flatMap(item =>
                 item.abstractDate.texts.filter(text => text.type === 1).map(text => text.id)
             );
         }
 
-        async function getTodayBibleReading() {
+        async function getTodayBibleReading() { // сама цепочка извлечения ссылок на Библию
             let jsonWithTextIds = await getTextsFromAzbyka();
             let todayBibleId = getTextIdsWithType1(jsonWithTextIds);
             const url = `https://azbyka.ru/days/api/texts/${todayBibleId.join()}`;
@@ -89,42 +85,51 @@ schedule.scheduleJob("*/1 * * * *", () => {
                 }
 
                 const json = await response.json();
-                texts = json.text
+                texts = json.text // просто закидываем стринг в переменную, тут большие манипуляции не нужны
             } catch (error) {
                 bot.api.sendMessage(96498103, "Не удалось скачать данные с Азбуки - тексты"); // мой чат айди
                 console.error(error.message);
             }
         }
-        getTodayBibleReading();
+        setTimeout(getTodayBibleReading, 8000); // здесь извлекли ссылки на Библию и сохранили их в texts, страхуемся от спама запросами
+
 
     } catch (error) {
         console.error(error.message);
     }
 });
 
+/* 
+РАБОТА С ЧАТАМИ 
+*/
+
+function importChats() { // ДОСТАЕМ СПИСОК КОНТАКТОВ ИЗ ФАЙЛА
+    if (fs.existsSync(chatsList)) {
+        return JSON.parse(fs.readFileSync(chatsList, 'utf8'));
+    }
+    return [];
+}
+
 // ЗАПИСЫВАЕМ КОНТАКТЫ В ФАЙЛ
 function exportChats(chats) {
     fs.writeFileSync(chatsList, JSON.stringify(chats, null, 2), 'utf8');
 }
 
-let chats = importChats();
+let chats = importChats(); 
 
 
 bot.command('start', async (ctx) => {
-
     // если нет чата в списке контактов, добавляем
     if (!chats.some(chat => chat === ctx.chat.id)) {
         chats.push(ctx.chat.id);
         exportChats(chats)
     }
-
-    // приветственное сообщение
-    await ctx.reply(
+    await ctx.reply( // приветственное сообщение
         'Мир Вам! Этот бот ежедневно будет отправлять Вам информацию о сегодняшнем дне в календаре Русской Православной Церкви. В НАСТОЯЩЕЕ ВРЕМЯ БОТ НАХОДИТСЯ В РАЗРАБОТКЕ.',
     );
 });
 
-schedule.scheduleJob("15 * * * *", () => {
+schedule.scheduleJob("*/10 * * * *", () => {
     try {
         chats.forEach((userId) => {
             bot.api.sendMessage(userId, "Стахий черт");
