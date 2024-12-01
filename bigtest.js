@@ -8,14 +8,13 @@ const sanitizeHtml = require('sanitize-html')
 const bot = new Bot(process.env.BOT_API_KEY); // инициализация бота
 const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
 const saintsOfToday = path.join(__dirname, 'saintsOfToday.json'); // API/DAY запрос, святые и праздники дня
-let texts = '-'; // тут лежит чтение Евангелий и Апостола, ссылки на Библию
-
+const textsOfToday = path.join(__dirname, 'textsOfToday.json');
 /* 
 ЗАПРОС ДАННЫХ С АЗБУКИ
 */
 
 // СКАЧИВАЕМ ДАННЫЕ в 3-05 ("5 3 * * *"), запись в файл 
-schedule.scheduleJob("5 3 * * *", () => {
+schedule.scheduleJob("*/1 * * * *", () => {
     try {
         let today = new Date();
         let year = today.getUTCFullYear();
@@ -87,7 +86,7 @@ schedule.scheduleJob("5 3 * * *", () => {
                 }
 
                 const json = await response.json();
-                texts = json.text // просто закидываем стринг в переменную, тут большие манипуляции не нужны
+                fs.writeFileSync('textsOfToday.json', JSON.stringify(json, null, 2), 'utf8');
             } catch (error) {
                 bot.api.sendMessage(96498103, "Не удалось скачать данные с Азбуки - тексты"); // мой чат айди
                 console.error(error.message);
@@ -95,7 +94,6 @@ schedule.scheduleJob("5 3 * * *", () => {
             }
         }
         getTodayBibleReading() // здесь извлекли ссылки на Библию и сохранили их в texts, страхуемся от спама запросами
-        console.log(texts)
 
     } catch (error) {
         console.error(error.message);
@@ -132,9 +130,10 @@ bot.command('start', async (ctx) => {
     );
 });
 
-schedule.scheduleJob("*/1 * * * *", () => {
+schedule.scheduleJob("7 * * * *", () => {
     const arrayOfSaints = [];
     let data = JSON.parse(fs.readFileSync(saintsOfToday, 'utf8'))[0]
+    let texts = JSON.parse(fs.readFileSync(textsOfToday, 'utf8'))[0]
     data.abstractDate.priorities.forEach(priority => {
         const cacheTitle = sanitizeHtml(priority.memorialDay.cacheTitle, {
             allowedTags: ['b', 'i', 'em', 'strong', 'a', 'code', 'pre'],
@@ -151,12 +150,20 @@ schedule.scheduleJob("*/1 * * * *", () => {
     });
 
     let message = `Доброе утро!
-    Сегодня Русская Православная Церковь празднует:
-      ${arrayOfSaints.join('\n')}
+
+Сегодня Русская Православная Церковь празднует:
+
+${arrayOfSaints.join('\n')}
+
+На богослужениях в храме будут читаться:
+${texts}
       `
     try {
         chats.forEach((userId) => {
-            bot.api.sendMessage(userId, message, { parse_mode: "HTML" });
+            bot.api.sendMessage(userId, message, {
+                parse_mode: "HTML",
+                disable_web_page_preview: true
+            });
         });
     } catch (error) {
         console.error("Error occurred while sending hourly update:", error);
