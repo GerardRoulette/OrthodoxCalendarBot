@@ -3,7 +3,7 @@ const { Bot } = require('grammy');
 const schedule = require("node-schedule");
 const fs = require('fs');
 const path = require('path');
-const { setTimeout } = require('timers/promises');
+const sanitizeHtml = require('sanitize-html')
 
 const bot = new Bot(process.env.BOT_API_KEY); // инициализация бота
 const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
@@ -15,13 +15,14 @@ let texts = '-'; // тут лежит чтение Евангелий и Апо�
 */
 
 // СКАЧИВАЕМ ДАННЫЕ в 3-05 ("5 3 * * *"), запись в файл 
-schedule.scheduleJob("*/1 * * * *", () => {
+schedule.scheduleJob("5 3 * * *", () => {
     try {
         let today = new Date();
         let year = today.getUTCFullYear();
-        let month = (today.getUTCMonth() + 1).toString().padStart(2, '0'); 
+        let month = (today.getUTCMonth() + 1).toString().padStart(2, '0');
         let day = today.getUTCDate().toString().padStart(2, '0');
-        async function getSaintsFromAzbyka() { // достаем по новому АПИ запросу святых и праздники дня
+        console.log(`${year} ${month} ${day}`)
+        async function getSaintsFromAzbyka() {
             const url = `https://azbyka.ru/days/api/day?date%5Bexact%5D=${year}-${month}-${day}`;
             try {
                 const response = await fetch(url, {
@@ -30,20 +31,20 @@ schedule.scheduleJob("*/1 * * * *", () => {
                     }
                 });
                 if (!response.ok) {
-                    setTimeout(getSaintsFromAzbyka, 120000)
                     throw new Error(`API DAY - Response status: ${response.status} --- ${response.text}`);
-                    
                 }
 
                 const json = await response.json();
-                fs.writeFileSync(saintsOfToday, JSON.stringify(json, null, 2), 'utf8');
+                fs.writeFileSync('saintsOfToday.json', JSON.stringify(json, null, 2), 'utf8');
+                console.log('Data written to saintsOfToday.json');
             } catch (error) {
                 bot.api.sendMessage(96498103, "Не удалось скачать данные с Азбуки - святые"); // мой чат айди
-                console.error(error.message);
+                console.error('Error:', error.message);
+                setTimeout(getSaintsFromAzbyka, 300000)
             }
         }
 
-        setTimeout(getSaintsFromAzbyka, 3000); // НА ВСЯКИЙ, ВДРУГ СПАМ ФИЛЬТР
+        getSaintsFromAzbyka(); // НА ВСЯКИЙ, ВДРУГ СПАМ ФИЛЬТР
 
         async function getTextsFromAzbyka() { // CКАЧИВАЕМ ПО СТАРОМУ АПИ РАДИ ССЫЛОК НА БИБЛИЮ
             const url = `https://azbyka.ru/days/api/cache_dates?date%5Bexact%5D=${year}-${month}-${day}`;
@@ -62,6 +63,7 @@ schedule.scheduleJob("*/1 * * * *", () => {
             } catch (error) {
                 bot.api.sendMessage(96498103, "Не удалось скачать данные с Азбуки - тексты"); // мой чат айди
                 console.error(error.message);
+                setTimeout(getTextsFromAzbyka, 300000)
             }
         }
         function getTextIdsWithType1(data) { // фильтруем большой json и достаем текст с id 1
@@ -89,10 +91,11 @@ schedule.scheduleJob("*/1 * * * *", () => {
             } catch (error) {
                 bot.api.sendMessage(96498103, "Не удалось скачать данные с Азбуки - тексты"); // мой чат айди
                 console.error(error.message);
+                setTimeout(getTodayBibleReading, 300000)
             }
         }
-        setTimeout(getTodayBibleReading, 8000); // здесь извлекли ссылки на Библию и сохранили их в texts, страхуемся от спама запросами
-
+        getTodayBibleReading() // здесь извлекли ссылки на Библию и сохранили их в texts, страхуемся от спама запросами
+        console.log(texts)
 
     } catch (error) {
         console.error(error.message);
@@ -115,7 +118,7 @@ function exportChats(chats) {
     fs.writeFileSync(chatsList, JSON.stringify(chats, null, 2), 'utf8');
 }
 
-let chats = importChats(); 
+let chats = importChats();
 
 
 bot.command('start', async (ctx) => {
@@ -129,10 +132,31 @@ bot.command('start', async (ctx) => {
     );
 });
 
-schedule.scheduleJob("*/10 * * * *", () => {
+schedule.scheduleJob("*/1 * * * *", () => {
+    const arrayOfSaints = [];
+    let data = JSON.parse(fs.readFileSync(saintsOfToday, 'utf8'))[0]
+    data.abstractDate.priorities.forEach(priority => {
+        const cacheTitle = sanitizeHtml(priority.memorialDay.cacheTitle, {
+            allowedTags: ['b', 'i', 'em', 'strong', 'a', 'code', 'pre'],
+            allowedAttributes: {
+                'a': ['href']
+            },
+            allowedSchemes: ['http', 'https']
+        });
+        if (priority.memorialDay.iconOfOurLady) {
+            arrayOfSaints.push(`• Икону Божией Матери "${cacheTitle}"`);
+        } else {
+            arrayOfSaints.push(`• ${cacheTitle}`);
+        }
+    });
+
+    let message = `Доброе утро!
+    Сегодня Русская Православная Церковь празднует:
+      ${arrayOfSaints.join('\n')}
+      `
     try {
         chats.forEach((userId) => {
-            bot.api.sendMessage(userId, "Стахий черт");
+            bot.api.sendMessage(userId, message, { parse_mode: "HTML" });
         });
     } catch (error) {
         console.error("Error occurred while sending hourly update:", error);

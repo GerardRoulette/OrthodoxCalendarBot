@@ -6,7 +6,7 @@ const path = require('path');
 
 const bot = new Bot(process.env.BOT_API_KEY);
 const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
-const date = path.join(__dirname, 'date.json'); // API/DAY запрос, святые дня
+const date = path.join(__dirname, 'saintsOfToday.json'); // API/DAY запрос, святые дня
 
 // ДОСТАЕМ СПИСОК КОНТАКТОВ ИЗ ФАЙЛА
 function importChats () {
