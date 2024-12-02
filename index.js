@@ -13,8 +13,8 @@ const textsOfToday = path.join(__dirname, 'textsOfToday.json');
 ЗАПРОС ДАННЫХ С АЗБУКИ
 */
 
-// СКАЧИВАЕМ ДАННЫЕ в 3-05 ("5 3 * * *"), запись в файл 
-schedule.scheduleJob("5 3 * * *", () => {
+// СКАЧИВАЕМ ДАННЫЕ в 0-05 ("5 3 * * *"), запись в файл 
+schedule.scheduleJob("2 0 * * *", () => {
     try {
         let today = new Date();
         let year = today.getUTCFullYear();
@@ -136,15 +136,12 @@ function sendInfoToUser() {
 ${arrayOfSaints.join('\n')}
 
 На богослужениях в храме будут читаться:
+
 ${texts}
 
 Все тексты в одном месте можно прочесть <a href="https://azbyka.ru/biblia/days/${year}-${month}-${day}">по этой ссылке.</a>
       `
-
-return message;
-
-
-   
+    return message;
 }
 
 /* 
@@ -189,15 +186,15 @@ bot.command('start', async (ctx) => {
 (я скажу когда будет можно)
 
 По всем вопросам и предложениям просьба связываться с @kvasov1`, {
-    parse_mode: "HTML",
-    disable_web_page_preview: true
-}
+        parse_mode: "HTML",
+        disable_web_page_preview: true
+    }
     );
     await ctx.reply( // приветственное сообщение
         sendInfoToUser(), {
-            parse_mode: "HTML",
-            disable_web_page_preview: true
-        }
+        parse_mode: "HTML",
+        disable_web_page_preview: true
+    }
     );
 });
 
