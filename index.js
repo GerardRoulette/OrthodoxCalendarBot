@@ -4,6 +4,8 @@ const schedule = require("node-schedule");
 const fs = require('fs');
 const path = require('path');
 const sanitizeHtml = require('sanitize-html')
+const { autoRetry } = require("@grammyjs/auto-retry");
+
 
 const bot = new Bot(process.env.BOT_API_KEY); // инициализация бота
 const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
@@ -13,7 +15,7 @@ const textsOfToday = path.join(__dirname, 'textsOfToday.json');
 ЗАПРОС ДАННЫХ С АЗБУКИ
 */
 
-// СКАЧИВАЕМ ДАННЫЕ в 0-05 ("5 3 * * *"), запись в файл 
+// СКАЧИВАЕМ ДАННЫЕ в 0-02 ("2 0 * * *"), запись в файл 
 schedule.scheduleJob("2 0 * * *", () => {
     try {
         let today = new Date();
@@ -210,5 +212,5 @@ schedule.scheduleJob("30 8 * * *", () => {
         console.error("Error occurred while sending hourly update:", error);
     }
 });
-
+bot.api.config.use(autoRetry());
 bot.start();
