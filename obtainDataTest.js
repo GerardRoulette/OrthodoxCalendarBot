@@ -1,15 +1,14 @@
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
-const fetch = require('node-fetch');
 
 
 function obtainData () {
     try {
         let today = new Date();
-        let year = today.getUTCFullYear();
-        let month = (today.getUTCMonth() + 1).toString().padStart(2, '0');
-        let day = today.getUTCDate().toString().padStart(2, '0');
+        let year = today.getFullYear();
+        let month = (today.getMonth() + 1).toString().padStart(2, '0');
+        let day = today.getDate().toString().padStart(2, '0');
         async function getSaintsFromAzbyka() {
             const url = `https://azbyka.ru/days/api/day?date%5Bexact%5D=${year}-${month}-${day}`;
             try {
