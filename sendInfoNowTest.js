@@ -11,9 +11,9 @@ const textsOfToday = path.join(__dirname, 'textsOfToday.json');
 
 function sendInfoToUser() {
     let today = new Date();
-    let year = today.getUTCFullYear();
-    let month = (today.getUTCMonth() + 1).toString().padStart(2, '0');
-    let day = today.getUTCDate().toString().padStart(2, '0');
+    let year = today.getFullYear();
+    let month = (today.getMonth() + 1).toString().padStart(2, '0');
+    let day = today.getDate().toString().padStart(2, '0');
     const arrayOfSaints = [];
     let data = JSON.parse(fs.readFileSync(saintsOfToday, 'utf8'))[0]
     let textsPreFormat = JSON.parse(fs.readFileSync(textsOfToday, 'utf8'));
