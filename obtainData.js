@@ -85,6 +85,5 @@ function obtainData () {
     }
 };
 
-obtainData()
 
 exports.obtainData = obtainData;

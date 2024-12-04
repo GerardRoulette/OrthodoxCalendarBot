@@ -1,11 +1,11 @@
 require('dotenv').config();
-const { Bot } = require('grammy');
+const { Bot, GrammyError, HttpError, Keyboard, InlineKeyboard } = require('grammy');
 const schedule = require("node-schedule");
 const fs = require('fs');
 const path = require('path');
 const sanitizeHtml = require('sanitize-html')
 const { autoRetry } = require("@grammyjs/auto-retry");
-import { hydrate } from "@grammyjs/hydrate";
+const { hydrate } = require("@grammyjs/hydrate");
 const obtainData = require ('./obtainData.js');
 
 const bot = new Bot(process.env.BOT_API_KEY); // инициализация бота
@@ -135,7 +135,41 @@ schedule.scheduleJob("30 8 * * *", () => {
     }
 });
 
+const menuKeyboard = new InlineKeyboard()
+.text('Узнать статус заказа', 'order-status')
+.text('Обратиться в поддержку', 'support');
+const backKeyboard = new InlineKeyboard().text('< Назад в меню', 'back');
 
+bot.command('menu', async (ctx) => {
+    await ctx.reply('Выберите пункт меню', {
+   reply_markup: menuKeyboard,
+   });
+   });
+    
+    
+   bot.callbackQuery('order-status', async (ctx) => {
+   await ctx.callbackQuery.message.editText('Статус заказа: В пути', {
+   reply_markup: backKeyboard,
+   });
+   await ctx.answerCallbackQuery();
+   });
+   
+   bot.callbackQuery('support', async (ctx) => {
+   await ctx.callbackQuery.message.editText('Напишите Ваш вопрос', { reply_markup: backKeyboard,
+   });
+   await ctx.answerCallbackQuery();
+   });
+   
+   bot.callbackQuery('back', async (ctx) => {
+   await ctx.callbackQuery.message.editText('Выберите пункт меню', { reply_markup: menuKeyboard,
+   });
+   await ctx.answerCallbackQuery();
+   });
+
+   bot.api.setMyCommands([
+    { command: 'start', description: 'Запуск бота' },
+    { command: 'setup', description: 'Настройки' },
+    ]);
 
 bot.api.config.use(autoRetry());
 bot.start();
