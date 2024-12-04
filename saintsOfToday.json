@@ -3,71 +3,13 @@
     "abstractDate": {
       "priorities": [
         {
-          "paragraph": 1,
+          "paragraph": 0,
           "number": 0,
           "memorialDay": {
-            "cacheTitle": "<a href=\"http://azbyka.ru/days/prazdnik-vvedenie-vhod-vo-hram-presvjatoj-vladychicy-nashej-bogorodicy-i-prisnodevy-marii\">Предпразднство Введения во Храм Пресвятой Богородицы</a>",
-            "holidayAdditionalDay": {
-              "title": "Предпразднство Введения во Храм Пресвятой Богородицы"
+            "cacheTitle": "<a href=\"http://azbyka.ru/days/prazdnik-vvedenie-vhod-vo-hram-presvjatoj-vladychicy-nashej-bogorodicy-i-prisnodevy-marii\">Введение (Вход) во Храм Пресвятой Владычицы нашей Богородицы и Приснодевы Марии</a>",
+            "holiday": {
+              "title": "Введение (Вход) во Храм Пресвятой Владычицы нашей Богородицы и Приснодевы Марии"
             }
-          }
-        },
-        {
-          "paragraph": 2,
-          "number": 1,
-          "memorialDay": {
-            "cacheTitle": "<a href='http://azbyka.ru/days/sv-damian-v-shime-diodor-juregorskij'>Прп. Диодо́ра Юрьегорского (1633)</a>"
-          }
-        },
-        {
-          "paragraph": 2,
-          "number": 2,
-          "memorialDay": {
-            "cacheTitle": "<a href='http://azbyka.ru/days/sv-dasij-dorostolskij'>мч. Да́сия Доростольского (284–305)</a>"
-          }
-        },
-        {
-          "paragraph": 2,
-          "number": 3,
-          "memorialDay": {
-            "cacheTitle": "<a href=\"http://azbyka.ru/days/svv-evstafij-nikejskij-fespesij-nikejskij-anatolij-nikejskij\">мчч. Евста́фия, Феспе́сия и Анато́лия (312)</a>",
-            "saintsGroup": {
-              "cacheTitle": "Мученики Евстафий, Феспесий и Анатолий Никейские"
-            }
-          }
-        },
-        {
-          "paragraph": 2,
-          "number": 5,
-          "memorialDay": {
-            "cacheTitle": "<a href=\"http://azbyka.ru/days/svv-isaakij-isakij-persidskij-ipatij-persidskij-azat-gadiabskij-persidskij-sasonij-guzitskij-persidskij-fekla\">сщмчч. Ни́рсы, епископа и Ио́сифа, ученика его, Иоа́нна, Саве́рия, Иса́кия и Ипа́тия, епископов Персидских, мчч. Аза́та скопца, Сасо́ния, Фе́клы, Анны и иных многих мужей и жен, в Персиде пострадавших (343)</a>",
-            "saintsGroup": {
-              "cacheTitle": "Сщмч. Нирса, епископ и мч. Иосиф, ученик его, сщмчч. Иоанн и Саверий,  Исаакий и Ипатий, епископы, мчч. Азат и Сасоний, мцц. Фекла и Анна, и иные многие мужи и жены, в Персиде пострадавшие"
-            }
-          }
-        },
-        {
-          "paragraph": 3,
-          "number": 1,
-          "memorialDay": {
-            "cacheTitle": "Сщмчч. <a href='http://azbyka.ru/days/sv-aleksij-amanov'>Алекси́я <span style=\"font-size: 10pt;\"><em>Аманова</em></span></a>, <a href='http://azbyka.ru/days/sv-aleksandr-saharov-presviter'>Алекса́ндра <span style=\"font-size: 10pt;\"><em>Сахарова</em></span></a>, <a href='http://azbyka.ru/days/sv-vladimir-medvedjuk'>Влади́мира <span style=\"font-size: 10pt;\"><em>Медведюка</em></span></a>, <a href='http://azbyka.ru/days/sv-ioann-zabolotnyj'>Иоа́нна <span style=\"font-size: 10pt;\"><em>Заболотного</em></span></a>, <a href='http://azbyka.ru/days/sv-aleksij-nikatov'>Алекси́я <span style=\"font-size: 10pt;\"><em>Никатова</em></span></a>, <a href='http://azbyka.ru/days/sv-vasilij-kandeljabrov'>Васи́лия <span style=\"font-size: 10pt;\"><em>Канделяброва</em></span></a>, <a href='http://azbyka.ru/days/sv-nikolaj-zelenov'>Николая <span style=\"font-size: 10pt;\"><em>Зеленова</em></span></a>"
-          }
-        },
-        {
-          "paragraph": 3,
-          "number": 2,
-          "memorialDay": {
-            "cacheTitle": "<a href=\"http://azbyka.ru/days/svv-ioann-sarv-emilian-panasevich-nikolaj-pokrovskij-drugoj\">Иоа́нна <span style=\"font-size: 10pt;\"><em>Сарва</em></span>, Емилиа́на <span style=\"font-size: 10pt;\"><em>Панасевича</em></span>, Николая <span style=\"font-size: 10pt;\"><em>Покровского</em></span>, пресвитеров</a>",
-            "saintsGroup": {
-              "cacheTitle": "Священномученики Васи́лий Канделябров, Николай Зеленов, Иоа́нн Сарв, Емилиа́н Панасевич, Николай Покровский и преподобномученик  Арсе́ний (Дмитриев)"
-            }
-          }
-        },
-        {
-          "paragraph": 3,
-          "number": 3,
-          "memorialDay": {
-            "cacheTitle": "прмчч. <a href='https://azbyka.ru/days/sv-arsenij-dmitriev'>Арсе́ния <span style=\"font-size: 10pt;\"><em>(Дмитриева)</em></span>, игумена</a>, <a href='https://azbyka.ru/days/sv-evtihij-kachur'>Евти́хия <span style=\"font-size: 10pt;\"><em>(Качура)</em></span>, игумена</a> и <a href='https://azbyka.ru/days/sv-ilarion-pisarec'>Иларио́на <span style=\"font-size: 10pt;\"><em>(Писарца)</em></span>, иеромонаха</a>, <a href='https://azbyka.ru/days/sv-ioannikija-kozhevnikova'>прмц. Иоанни́кии <span style=\"font-size: 10pt;\"><em>(Кожевниковой)</em></span>, игумении (1937)</a>, <a href='https://azbyka.ru/days/sv-tatiana-fomicheva'>прмц. Татиа́ны <span style=\"font-size: 10pt;\"><em>Фомичевой</em></span>, послушницы (после 1937)</a>"
           }
         }
       ]
@@ -81,19 +23,6 @@
   {
     "abstractDate": {
       "priorities": []
-    }
-  },
-  {
-    "abstractDate": {
-      "priorities": [
-        {
-          "paragraph": 1,
-          "number": 1,
-          "memorialDay": {
-            "cacheTitle": "<a href='https://azbyka.ru/days/sv-grigorij-dekapolit'>Прп. Григо́рия Декаполи́та (ок. 842)</a>, <a href='https://azbyka.ru/days/sv-prokl-konstantinopolskij'>свт. Прокла, патриарха Константинопольского (446–447)</a>"
-          }
-        }
-      ]
     }
   },
   {
