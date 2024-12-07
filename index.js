@@ -122,7 +122,7 @@ bot.command('start', async (ctx) => {
     );
 });
 
-schedule.scheduleJob("30 8 * * *", () => {
+schedule.scheduleJob("54 * * * *", () => {
     try {
         chats.forEach((userId) => {
             bot.api.sendMessage(userId, sendInfoToUser(), {
@@ -135,12 +135,22 @@ schedule.scheduleJob("30 8 * * *", () => {
     }
 });
 
+/* 
+--- МЕНЮ ---
+*/
+
 const menuKeyboard = new InlineKeyboard()
-.text('Узнать статус заказа', 'order-status')
-.text('Обратиться в поддержку', 'support');
+.text('Установить часовой пояс', 'order-status')
+.row()
+.text('Установить желаемое время', 'support')
+.row()
+.text('Как использовать бот в групповом чате?', 'groupchat')
+.row()
+.text('Информация о разработчике');
+
 const backKeyboard = new InlineKeyboard().text('< Назад в меню', 'back');
 
-bot.command('menu', async (ctx) => {
+bot.command('setup', async (ctx) => {
     await ctx.reply('Выберите пункт меню', {
    reply_markup: menuKeyboard,
    });
