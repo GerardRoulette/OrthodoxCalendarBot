@@ -140,7 +140,7 @@ schedule.scheduleJob("54 * * * *", () => {
 */
 
 const menuKeyboard = new InlineKeyboard()
-.text('Установить часовой пояс', 'order-status')
+.text('Установить часовой пояс', 'choose-timezone')
 .row()
 .text('Установить желаемое время', 'support')
 .row()
@@ -150,6 +150,25 @@ const menuKeyboard = new InlineKeyboard()
 
 const backKeyboard = new InlineKeyboard().text('< Назад в меню', 'back');
 
+const timeZoneKeyboard = new InlineKeyboard()
+.text('UTC +0 (Британия, Западная Африка)', 'order-status')
+.row()
+.text('UTC +1 (Европа, Центральная Африка)', 'support')
+.row()
+.text('UTC +2 (Калининград, Восточная Европа)', 'groupchat')
+.row()
+.text('UTC +3 (Москва, Санкт-Петербург)')
+.row()
+.text('UTC +3:30 (Иран)')
+.row()
+.text('UTC +4 (Самара, Саратов, Ижевск, Грузия, ОАЭ)')
+.row()
+.text('UTC +4:30 (Афганистан)')
+.row()
+.text('UTC +5 (Башкирия, Челябинск, Пермь, Оренбург)')
+.row()
+.text('UTC +5:30 (Индия, Шри-Ланка)');
+
 bot.command('setup', async (ctx) => {
     await ctx.reply('Выберите пункт меню', {
    reply_markup: menuKeyboard,
@@ -157,9 +176,9 @@ bot.command('setup', async (ctx) => {
    });
     
     
-   bot.callbackQuery('order-status', async (ctx) => {
+   bot.callbackQuery('choose-timezone', async (ctx) => {
    await ctx.callbackQuery.message.editText('Статус заказа: В пути', {
-   reply_markup: backKeyboard,
+   reply_markup: timeZoneKeyboard,
    });
    await ctx.answerCallbackQuery();
    });

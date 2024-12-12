@@ -3,6 +3,7 @@ const { Bot } = require('grammy');
 const fs = require('fs');
 const path = require('path');
 const sanitizeHtml = require('sanitize-html')
+const { autoRetry } = require("@grammyjs/auto-retry");
 
 const bot = new Bot(process.env.BOT_API_KEY); // инициализация бота
 const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
@@ -15,7 +16,7 @@ function sendInfoToUser() {
     let month = (today.getMonth() + 1).toString().padStart(2, '0');
     let day = today.getDate().toString().padStart(2, '0');
     const arrayOfSaints = [];
-    let data = JSON.parse(fs.readFileSync(saintsOfToday, 'utf8'))[0]
+    let data = JSON.parse(fs.readFileSync(saintsOfToday, 'utf8'))
     let textsPreFormat = JSON.parse(fs.readFileSync(textsOfToday, 'utf8'));
     let texts = sanitizeHtml(textsPreFormat.text, {
         allowedTags: ['b', 'i', 'em', 'strong', 'a', 'code', 'pre'],
@@ -24,21 +25,26 @@ function sendInfoToUser() {
         },
         allowedSchemes: ['http', 'https']
     });
-    data.abstractDate.priorities.forEach(priority => {
-        const cacheTitle = sanitizeHtml(priority.memorialDay.cacheTitle, {
-            allowedTags: ['b', 'i', 'em', 'strong', 'a', 'code', 'pre'],
-            allowedAttributes: {
-                'a': ['href']
-            },
-            allowedSchemes: ['http', 'https']
-        });
-        if (priority.memorialDay.iconOfOurLady) {
-            arrayOfSaints.push(`• Икону Божией Матери "${cacheTitle}"`);
-        } else {
-            arrayOfSaints.push(`• ${cacheTitle}`);
+    data.forEach(item => {
+        if (item.abstractDate && item.abstractDate.priorities) {
+            item.abstractDate.priorities.forEach(priority => {
+                if (priority.memorialDay && priority.memorialDay.cacheTitle) {
+                    const cacheTitle = sanitizeHtml(priority.memorialDay.cacheTitle, {
+                        allowedTags: ['b', 'i', 'em', 'strong', 'a', 'code', 'pre'],
+                        allowedAttributes: {
+                            'a': ['href']
+                        },
+                        allowedSchemes: ['http', 'https']
+                    });
+                    if (priority.memorialDay.iconOfOurLady) {
+                        arrayOfSaints.push(`• Икону Божией Матери "${cacheTitle}"`);
+                    } else {
+                        arrayOfSaints.push(`• ${cacheTitle}`);
+                    }
+                }
+            });
         }
     });
-
     let message = `Доброе утро!
 
 Сегодня Русская Православная Церковь празднует:
@@ -80,6 +86,7 @@ function sendInfoNow() {
         console.error("Error occurred while sending hourly update:", error);
     }
 };
+bot.api.config.use(autoRetry());
 
 sendInfoNow();
 bot.start();
