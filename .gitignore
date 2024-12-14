@@ -2,6 +2,7 @@
 chats.json
 saintsOfToday.json
 textsOfToday.json
+mybase.db
 # Ignore logs
 *.log
 
