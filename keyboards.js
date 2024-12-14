@@ -1,3 +1,5 @@
+import { InlineKeyboard } from "grammy";
+
 const timeZoneKeyboardOne = new InlineKeyboard()
     .text('UTC +0 (Британия, Западная Африка)', '0').row()
     .text('UTC +1 (Европа, Центральная Африка)', '1').row()
@@ -9,7 +11,7 @@ const timeZoneKeyboardOne = new InlineKeyboard()
     .text('UTC +5 (Башкирия, Челябинск, Пермь, Оренбург)', '5').row()
     .text('UTC +5:30 (Индия, Шри-Ланка)', '5.5').row()
     .text('UTC +5:45 (Непал)', '5.75').row()
-    .text('ВПЕРЕД ➡️➡️➡️', 'pagetwo')
+    .text('❌ ОБРАТНО В МЕНЮ', 'mainmenu').text('ВПЕРЕД ➡️➡️➡️', 'pagetwo')
 
 const timeZoneKeyboardTwo = new InlineKeyboard()
     .text('UTC +6 (Омск, Кыргызстан)', '6').row()
@@ -37,4 +39,6 @@ const timeZoneKeyboardThree = new InlineKeyboard()
     .text('UTC -3 (Аргентина, Бразилия, Уругвай)', '-3').row()
     .text('UTC -2 (Гренландия)', '-2').row()
     .text('UTC -1 (Кабо-Верде, Азорские острова)', '-1').row()
-    .text('⬅️⬅️⬅️ НАЗАД', 'pagetwo')
+    .text('⬅️⬅️⬅️ НАЗАД', 'pagetwo');
+
+    export { timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree };

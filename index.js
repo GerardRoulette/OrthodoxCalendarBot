@@ -8,6 +8,7 @@ const sanitizeHtml = require('sanitize-html')
 const { autoRetry } = require("@grammyjs/auto-retry");
 const { hydrate } = require("@grammyjs/hydrate");
 const obtainData = require('./obtainData.js');
+const { timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree } = require('./keyboards.js')
 
 const bot = new Bot(process.env.BOT_API_KEY); // инициализация бота
 const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
@@ -148,87 +149,37 @@ const menuKeyboard = new InlineKeyboard()
     .text('Как использовать бот в групповом чате?', 'groupchat')
     .row()
     .text('Информация о разработчике');
-
-
-    const timezones = [
-        ['UTC +0 (Британия, Западная Африка)', 0],
-        ['UTC +1 (Европа, Центральная Африка)', 1],
-        ['UTC +2 (Калининград, Восточная Европа)', 2],
-        ['UTC +3 (Москва, Санкт-Петербург)', 3],
-        ['UTC +3:30 (Иран)', 3.5],
-        ['UTC +4 (Самара, Саратов, Ижевск, Грузия, ОАЭ)', 4],
-        ['UTC +4:30 (Афганистан)', 4.5],
-        ['UTC +5 (Башкирия, Челябинск, Пермь, Оренбург)', 5],
-        ['UTC +5:30 (Индия, Шри-Ланка)', 5.5],
-        ['UTC +5:45 (Непал)', 5.75],
-        ['UTC +6 (Омск, Кыргызстан)', 6],
-        ['UTC +6:30 (Мьянма)', 6.5],
-        ['UTC +7 (Красноярск, Кемерово, Томск, Алтай)', 7],
-        ['UTC +8 (Бурятия, Иркутск, Китай)', 8],
-        ['UTC +9 (Якутск, Благовещенск, Япония, Корея)', 9],
-        ['UTC +10 (Хабаровск, Владивосток, Папуа)', 10],
-        ['UTC +11 (Магадан, Сахалин)', 11],
-        ['UTC +12 (Чукотка, Камчатка, Новая Зеландия)', 12],
-        ['UTC +13 (Самоа, Тонга, Токелау)', 13],
-        ['UTC -11 (Американское Самоа, Мидуэй)', -11],
-        ['UTC -10 (Гавайи)', -10],
-        ['UTC -9 (Аляска)', -9],
-        ['UTC -8 (Калифорния, Невада, Орегон)', -8],
-        ['UTC -7 (Аризона, Колорадо, Юта)', -7],
-        ['UTC -6 (Калифорния, Невада, Орегон)', -6],
-        ['UTC -5 (Нью-Йорк, Куба, Панама, Перу)', -5],
-        ['UTC -4 (Венесуэла, Карибские острова)', -4],
-        ['UTC -3 (Аргентина, Бразилия, Уругвай)', -3],
-        ['UTC -2 (Гренландия)', -2],
-        ['UTC -1 (Кабо-Верде, Азорские острова)', -1],
-    ];
-    const itemsPerPage = 10;
-
-    function createTimezoneKeyboard(page) {
-        const keyboard = new InlineKeyboard();
-        const startIdx = page * itemsPerPage;
-        const endIdx = Math.min(startIdx + itemsPerPage, timezones.length);
-    
-        for (let i = startIdx; i < endIdx; i++) {
-            keyboard.text(timezones[i][0], `timezone-${i}`).row();
-        }
-    
-        if (page > 0) {
-            keyboard.text('⬅️ Back', `page-${page - 1}`);
-        }
-        if (endIdx < timezones.length) {
-            keyboard.text('Forward ➡️', `page-${page + 1}`);
-        }
-    
-        return keyboard;
-    }
-    
-    async function sendTimezonePage(ctx, page) {
-        const keyboard = createTimezoneKeyboard(page);
-        await ctx.reply('Select your time zone:', {
-            reply_markup: keyboard,
-        });
-    }
-    
-    bot.command('selecttimezone', (ctx) => {
-        sendTimezonePage(ctx, 0);
+/* TIMEZONE */
+bot.callbackQuery('choose-timezone', async (ctx) => {
+    await ctx.callbackQuery.message.editText('По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка:', {
+        reply_markup: timeZoneKeyboardOne,
     });
-    
-    bot.on('callback_query:data', async (ctx) => {
-        const data = ctx.callbackQuery.data;
-        if (data.startsWith('page-')) {
-            const page = parseInt(data.split('-')[1], 10);
-            const keyboard = createTimezoneKeyboard(page);
-            await ctx.editMessageReplyMarkup(keyboard);
-        } else if (data.startsWith('timezone-')) {
-            const index = parseInt(data.split('-')[1], 10);
-            const selectedTimezone = timezones[index][0];
-            await ctx.reply(`You selected: ${selectedTimezone}`);
-        }
-        await ctx.answerCallbackQuery();
+    await ctx.api.editMessageText;
+    await ctx.answerCallbackQuery();
+});
+bot.callbackQuery('pageone', async (ctx) => {
+    await ctx.callbackQuery.message.editText('По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка:', {
+        reply_markup: timeZoneKeyboardOne,
     });
-    
+    await ctx.api.editMessageText;
+    await ctx.answerCallbackQuery();
+});
 
+bot.callbackQuery('pagetwo', async (ctx) => {
+    await ctx.callbackQuery.message.editText('По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка:', {
+        reply_markup: timeZoneKeyboardTwo,
+    });
+    await ctx.api.editMessageText;
+    await ctx.answerCallbackQuery();
+});
+
+bot.callbackQuery('pagethree', async (ctx) => {
+    await ctx.callbackQuery.message.editText('По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка:', {
+        reply_markup: timeZoneKeyboardThree,
+    });
+    await ctx.api.editMessageText;
+    await ctx.answerCallbackQuery();
+});
 
 bot.command('setup', async (ctx) => {
     await ctx.reply('Выберите пункт меню', {
@@ -237,13 +188,6 @@ bot.command('setup', async (ctx) => {
 });
 
 
-/*bot.callbackQuery('choose-timezone', async (ctx) => {
-    await ctx.callbackQuery.message.editText('Статус заказа: В пути', {
-        reply_markup: timeZoneKeyboard,
-    });
-    await ctx.answerCallbackQuery();
-}); */
-
 bot.callbackQuery('support', async (ctx) => {
     await ctx.callbackQuery.message.editText('Напишите Ваш вопрос', {
         reply_markup: backKeyboard,
@@ -251,7 +195,7 @@ bot.callbackQuery('support', async (ctx) => {
     await ctx.answerCallbackQuery();
 });
 
-bot.callbackQuery('back', async (ctx) => {
+bot.callbackQuery('mainmenu', async (ctx) => {
     await ctx.callbackQuery.message.editText('Выберите пункт меню', {
         reply_markup: menuKeyboard,
     });
