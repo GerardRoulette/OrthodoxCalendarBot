@@ -141,6 +141,13 @@ schedule.scheduleJob("54 * * * *", () => {
 --- МЕНЮ ---
 */
 
+// Главное меню
+bot.command('setup', async (ctx) => {
+    await ctx.reply('Выберите пункт меню', {
+        reply_markup: menuKeyboard,
+    });
+});
+
 const menuKeyboard = new InlineKeyboard()
     .text('Установить часовой пояс', 'choose-timezone')
     .row()
@@ -149,7 +156,10 @@ const menuKeyboard = new InlineKeyboard()
     .text('Как использовать бот в групповом чате?', 'groupchat')
     .row()
     .text('Информация о разработчике');
-/* TIMEZONE */
+
+
+
+/* ЧАСОВЫЕ ПОЯСА */
 bot.callbackQuery('choose-timezone', async (ctx) => {
     await ctx.callbackQuery.message.editText('По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка:', {
         reply_markup: timeZoneKeyboardOne,
@@ -181,11 +191,6 @@ bot.callbackQuery('pagethree', async (ctx) => {
     await ctx.answerCallbackQuery();
 });
 
-bot.command('setup', async (ctx) => {
-    await ctx.reply('Выберите пункт меню', {
-        reply_markup: menuKeyboard,
-    });
-});
 
 
 bot.callbackQuery('support', async (ctx) => {
@@ -201,6 +206,8 @@ bot.callbackQuery('mainmenu', async (ctx) => {
     });
     await ctx.answerCallbackQuery();
 });
+
+
 
 bot.api.setMyCommands([
     { command: 'start', description: 'Запуск бота' },
