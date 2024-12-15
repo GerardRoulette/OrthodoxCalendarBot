@@ -8,6 +8,10 @@ const sanitizeHtml = require('sanitize-html')
 const { autoRetry } = require("@grammyjs/auto-retry");
 const { hydrate } = require("@grammyjs/hydrate");
 const obtainData = require('./obtainData.js');
+const { sendInfoNow, sendInfoToUser } = require('./sendInfoNow.js')
+
+const { addUser } = require('./db');
+
 const { timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree } = require('./keyboards.js')
 
 const bot = new Bot(process.env.BOT_API_KEY); // инициализация бота
@@ -25,50 +29,6 @@ schedule.scheduleJob("2 0 * * *", () => {
     obtainData();
 });
 
-function sendInfoToUser() {
-    let today = new Date();
-    let year = today.getFullYear();
-    let month = (today.getMonth() + 1).toString().padStart(2, '0');
-    let day = today.getDate().toString().padStart(2, '0');
-    const arrayOfSaints = [];
-    let data = JSON.parse(fs.readFileSync(saintsOfToday, 'utf8'))[0]
-    let textsPreFormat = JSON.parse(fs.readFileSync(textsOfToday, 'utf8'));
-    let texts = sanitizeHtml(textsPreFormat.text, {
-        allowedTags: ['b', 'i', 'em', 'strong', 'a', 'code', 'pre'],
-        allowedAttributes: {
-            'a': ['href']
-        },
-        allowedSchemes: ['http', 'https']
-    });
-    data.abstractDate.priorities.forEach(priority => {
-        const cacheTitle = sanitizeHtml(priority.memorialDay.cacheTitle, {
-            allowedTags: ['b', 'i', 'em', 'strong', 'a', 'code', 'pre'],
-            allowedAttributes: {
-                'a': ['href']
-            },
-            allowedSchemes: ['http', 'https']
-        });
-        if (priority.memorialDay.iconOfOurLady) {
-            arrayOfSaints.push(`• Икону Божией Матери "${cacheTitle}"`);
-        } else {
-            arrayOfSaints.push(`• ${cacheTitle}`);
-        }
-    });
-
-    let message = `Доброе утро!
-
-Сегодня Русская Православная Церковь празднует:
-
-${arrayOfSaints.join('\n')}
-
-На богослужениях в храме будут читаться:
-
-${texts}
-
-Все тексты в одном месте можно прочесть <a href="https://azbyka.ru/biblia/days/${year}-${month}-${day}">по этой ссылке.</a>
-      `
-    return message;
-}
 
 /* 
 РАБОТА С ЧАТАМИ 
@@ -91,10 +51,15 @@ let chats = importChats();
 
 bot.command('start', async (ctx) => {
     // если нет чата в списке контактов, добавляем
-    if (!chats.some(chat => chat === ctx.chat.id)) {
-        chats.push(ctx.chat.id);
-        exportChats(chats)
-    }
+    const userInfo = {
+    first_name: ctx.from.first_name,
+    last_name: ctx.from.last_name,
+    username: ctx.from.username,
+    language_code: ctx.from.language_code
+  };
+
+  addUser(ctx.chat.id, userInfo);
+    
     await ctx.reply( // приветственное сообщение
         `Мир Вам!
 Этот бот ежедневно будет отправлять Вам информацию о сегодняшнем дне в календаре Русской Православной Церкви.
@@ -124,18 +89,10 @@ bot.command('start', async (ctx) => {
     );
 });
 
-schedule.scheduleJob("54 * * * *", () => {
-    try {
-        chats.forEach((userId) => {
-            bot.api.sendMessage(userId, sendInfoToUser(), {
-                parse_mode: "HTML",
-                disable_web_page_preview: true
-            });
-        });
-    } catch (error) {
-        console.error("Error occurred while sending hourly update:", error);
-    }
+schedule.scheduleJob("2 * * * *", () => {
+    sendInfoNow();
 });
+
 
 /* 
 --- МЕНЮ ---

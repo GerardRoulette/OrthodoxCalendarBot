@@ -56,10 +56,7 @@ ${texts}
 
 Все тексты в одном месте можно прочесть <a href="https://azbyka.ru/biblia/days/${year}-${month}-${day}">по этой ссылке.</a>
       `
-
 return message;
-
-
    
 }
 
@@ -88,5 +85,8 @@ function sendInfoNow() {
 };
 bot.api.config.use(autoRetry());
 
-sendInfoNow();
-bot.start();
+// sendInfoNow();
+// bot.start();
+
+    module.exports = { sendInfoNow, 
+            sendInfoToUser }
