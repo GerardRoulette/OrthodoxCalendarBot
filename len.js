@@ -1,4 +1,4 @@
-const len = []
+const len = [ ]
 
 
 function getlen () {

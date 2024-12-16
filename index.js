@@ -1,18 +1,20 @@
 require('dotenv').config();
-const { Bot, session, GrammyError, HttpError, Keyboard, InlineKeyboard } = require('grammy');
-const { conversations, createConversation } = require('@grammyjs/conversations');
+const { Bot, InlineKeyboard } = require('grammy');
 const schedule = require("node-schedule");
 const fs = require('fs');
 const path = require('path');
-const sanitizeHtml = require('sanitize-html')
 const { autoRetry } = require("@grammyjs/auto-retry");
 const { hydrate } = require("@grammyjs/hydrate");
 const obtainData = require('./obtainData.js');
 const { sendInfoNow, sendInfoToUser } = require('./sendInfoNow.js')
 
-const { addUser } = require('./db');
+const { addUser,
+    removeUser,
+    updateTimezone,
+    updatePreferredTime,
+    countUsers } = require('./db');
 
-const { timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree } = require('./keyboards.js')
+const { menuKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap } = require('./keyboards.js')
 
 const bot = new Bot(process.env.BOT_API_KEY); // инициализация бота
 const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
@@ -50,16 +52,8 @@ let chats = importChats();
 
 
 bot.command('start', async (ctx) => {
-    // если нет чата в списке контактов, добавляем
-    const userInfo = {
-    first_name: ctx.from.first_name,
-    last_name: ctx.from.last_name,
-    username: ctx.from.username,
-    language_code: ctx.from.language_code
-  };
-
-  addUser(ctx.chat.id, userInfo);
-    
+    // запись в БД
+    addUser(ctx.chat.id, `Name: ${ctx.from.first_name} ${ctx.from.last_name} // Username: @${ctx.from.username} // Lang: ${ctx.from.language_code}`); 
     await ctx.reply( // приветственное сообщение
         `Мир Вам!
 Этот бот ежедневно будет отправлять Вам информацию о сегодняшнем дне в календаре Русской Православной Церкви.
@@ -98,54 +92,54 @@ schedule.scheduleJob("2 * * * *", () => {
 --- МЕНЮ ---
 */
 
-// Главное меню
+// ГЛАВНОЕ МЕНЮ 
 bot.command('setup', async (ctx) => {
     await ctx.reply('Выберите пункт меню', {
         reply_markup: menuKeyboard,
     });
 });
 
-const menuKeyboard = new InlineKeyboard()
-    .text('Установить часовой пояс', 'choose-timezone')
-    .row()
-    .text('Установить желаемое время', 'support')
-    .row()
-    .text('Как использовать бот в групповом чате?', 'groupchat')
-    .row()
-    .text('Информация о разработчике');
-
-
-
-/* ЧАСОВЫЕ ПОЯСА */
-bot.callbackQuery('choose-timezone', async (ctx) => {
-    await ctx.callbackQuery.message.editText('По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка:', {
+// ОБРАБОТКА ИНЛАЙН КЛАВИАТУР
+bot.on('callback_query:data', async (ctx) => {
+  const data = ctx.callbackQuery.data;
+  if (timeZoneMap[data]) {
+    // выбор таймзоны (если есть в мапе)
+    const buttonText = timeZoneMap[data];
+    updateTimezone(ctx.chat.id, data);
+    await ctx.callbackQuery.message.editText(`Ваш новый часовой пояс - ${buttonText}`);
+  } else if (data === 'mainmenu') {
+    // обратно в главное меню
+   await ctx.callbackQuery.message.editText('Выберите пункт меню', {
+        reply_markup: menuKeyboard,
+    });
+    await ctx.answerCallbackQuery();
+  } else if (data === 'choose-timezone' || data === 'pageone') {
+    // Выбор часового пояса - первая страница
+     await ctx.callbackQuery.message.editText('По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка:', {
         reply_markup: timeZoneKeyboardOne,
     });
     await ctx.api.editMessageText;
     await ctx.answerCallbackQuery();
-});
-bot.callbackQuery('pageone', async (ctx) => {
-    await ctx.callbackQuery.message.editText('По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка:', {
-        reply_markup: timeZoneKeyboardOne,
-    });
-    await ctx.api.editMessageText;
-    await ctx.answerCallbackQuery();
-});
-
-bot.callbackQuery('pagetwo', async (ctx) => {
-    await ctx.callbackQuery.message.editText('По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка:', {
+  } else if (data === 'pagetwo') {
+    // Выбор часового пояса - вторая страница
+     await ctx.callbackQuery.message.editText('По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка:', {
         reply_markup: timeZoneKeyboardTwo,
     });
     await ctx.api.editMessageText;
     await ctx.answerCallbackQuery();
-});
-
-bot.callbackQuery('pagethree', async (ctx) => {
-    await ctx.callbackQuery.message.editText('По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка:', {
+  } else if (data === 'pagethree') {
+    // Выбор часового пояса - третья страница
+     await ctx.callbackQuery.message.editText('По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка:', {
         reply_markup: timeZoneKeyboardThree,
     });
     await ctx.api.editMessageText;
     await ctx.answerCallbackQuery();
+  } else {
+    // на всякий случай
+    await ctx.callbackQuery.message.editText('ОШИБКА');
+  }
+
+  await ctx.answerCallbackQuery(); 
 });
 
 
