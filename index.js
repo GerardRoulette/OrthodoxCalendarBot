@@ -12,7 +12,7 @@ const { addUser,
     removeUser,
     updateTimezone,
     updatePreferredTime,
-    countUsers } = require('./db');
+    countUsers } = require('./db.js');
 
 const { menuKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap } = require('./keyboards.js')
 
@@ -53,7 +53,16 @@ let chats = importChats();
 
 bot.command('start', async (ctx) => {
     // запись в БД
-    addUser(ctx.chat.id, `Name: ${ctx.from.first_name} ${ctx.from.last_name} // Username: @${ctx.from.username} // Lang: ${ctx.from.language_code}`); 
+    let userInfo;
+    let chatType;
+    if (ctx.chat.type === 'private') {
+        userInfo = `Name: ${ctx.from.first_name} ${ctx.from.last_name} // Username: @${ctx.from.username} // Lang: ${ctx.from.language_code}`;
+        chatType = 'PRIVATE'
+    } else {
+        userInfo = `Group Name: ${ctx.chat.title} // Admin @${ctx.from.username} // Group ID: ${ctx.chat.id}`;
+        chatType = 'GROUP'
+    }
+    addUser(ctx.chat.id, userInfo, chatType);
     await ctx.reply( // приветственное сообщение
         `Мир Вам!
 Этот бот ежедневно будет отправлять Вам информацию о сегодняшнем дне в календаре Русской Православной Церкви.
