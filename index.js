@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { autoRetry } = require("@grammyjs/auto-retry");
 const { hydrate } = require("@grammyjs/hydrate");
-const obtainData = require('./obtainData.js');
+const { getNewDate } = require('./obtainData.js');
 const { sendInfoNow, sendInfoToUser } = require('./sendInfoNow.js')
 
 const { addUser,
@@ -173,6 +173,10 @@ bot.api.setMyCommands([
     { command: 'start', description: 'Запуск бота' },
     { command: 'setup', description: 'Настройки' },
 ]);
+
+schedule.scheduleJob("*/1 * * * *", () => {
+    getNewDate();
+});
 
 bot.api.config.use(autoRetry());
 bot.start();

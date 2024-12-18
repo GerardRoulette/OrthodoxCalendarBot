@@ -215,7 +215,6 @@ async function getNewDate() {
         const newDate = new Date(currentDate);
         newDate.setDate(currentDate.getDate() + 7);
         const newDateString = newDate.toISOString().split('T')[0];
-
         // если ее нет в базе, то скачаем
         if (!latestDate || newDateString > latestDate) {
             // качаем новую дату
@@ -224,10 +223,9 @@ async function getNewDate() {
             const day = newDate.getDate();
             obtainData(year, month, day).then(message => {
                 updateData(newDateString, message);
-
                 // удаляем устаревшую дату
                 const twoDaysAgo = new Date(currentDate);
-                twoDaysAgo.setDate(currentDate.getDate() - 3);
+                twoDaysAgo.setDate(currentDate.getDate() - 2);
                 deleteOutdatedData(twoDaysAgo.toISOString().split('T')[0]);
             }).catch(err => {
                 console.error('Error obtaining data:', err);
@@ -238,8 +236,7 @@ async function getNewDate() {
 
 
 
-obtainData(2024, 12, 1).then(data => {
-    console.log(data)
-})
-
-exports.obtainData = obtainData;
+module.exports = {
+    getNewDate,
+    fetchAllData
+}
