@@ -6,7 +6,7 @@ const sanitizeHtml = require('sanitize-html')
 const { autoRetry } = require("@grammyjs/auto-retry");
 
 const bot = new Bot(process.env.BOT_API_KEY); // инициализация бота
-/* const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
+ const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
  const saintsOfToday = path.join(__dirname, 'saintsOfToday.json'); // API/DAY запрос, святые и праздники дня
 const textsOfToday = path.join(__dirname, 'textsOfToday.json');
 
@@ -59,17 +59,17 @@ ${texts}
 return message;
    
 }
-*/
 
 
-/* function importChats() { // ДОСТАЕМ СПИСОК КОНТАКТОВ ИЗ ФАЙЛА
+
+ function importChats() { // ДОСТАЕМ СПИСОК КОНТАКТОВ ИЗ ФАЙЛА
     if (fs.existsSync(chatsList)) {
         return JSON.parse(fs.readFileSync(chatsList, 'utf8'));
     }
     return [];
 }
 
-let chats = importChats(); */
+let chats = importChats(); 
 
 function sendInfoNow() {
     try {
@@ -80,7 +80,11 @@ function sendInfoNow() {
             });
         });
     } catch (error) {
-        console.error("Error occurred while sending hourly update:", error);
+        if (error instanceof GrammyError && error.error_code === 403) { // даблчек надо ли
+            console.log(`User ${userId} has blocked the bot. Skipping...`); 
+          } else {
+            console.error(`Failed to send message to user ${userId}:`, error);
+          }
     }
 };
 bot.api.config.use(autoRetry());

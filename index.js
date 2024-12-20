@@ -6,7 +6,7 @@ const path = require('path');
 const { autoRetry } = require("@grammyjs/auto-retry");
 const { hydrate } = require("@grammyjs/hydrate");
 const { getNewDate } = require('./obtainData.js');
-const { sendInfoNow, sendInfoToUser } = require('./sendInfoNow.js')
+const { sendInfoNow, sendInfoToUser } = require('./sendMessage.js')
 
 const { addUser,
     removeUser,
@@ -92,7 +92,7 @@ bot.command('start', async (ctx) => {
     );
 });
 
-schedule.scheduleJob("2 * * * *", () => {
+schedule.scheduleJob("*/1 * * * *", () => {
     sendInfoNow();
 });
 
@@ -174,9 +174,24 @@ bot.api.setMyCommands([
     { command: 'setup', description: 'Настройки' },
 ]);
 
-schedule.scheduleJob("*/1 * * * *", () => {
+schedule.scheduleJob("5 * * * *", () => {
     getNewDate();
 });
+
+// УДАЛЕНИЕ ЮЗЕРА ЕСЛИ ЗАБЛОКИРОВАЛ БОТА
+bot.on('my_chat_member', async (ctx) => {
+    const newChatMember = ctx.update.my_chat_member.new_chat_member;
+    const chatId = ctx.update.my_chat_member.chat.id;
+  
+    if (newChatMember.status === 'kicked') {
+      // User has blocked the bot
+      removeUser(chatId, (err) => {
+        if (err) {
+          console.error('Error deleting user from database:', err);
+        }
+      });
+    }
+  });
 
 bot.api.config.use(autoRetry());
 bot.start();
