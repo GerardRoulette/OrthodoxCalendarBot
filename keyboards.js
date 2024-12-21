@@ -3,7 +3,7 @@ const { InlineKeyboard } = require('grammy');
 const menuKeyboard = new InlineKeyboard()
     .text('Установить часовой пояс', 'choose-timezone')
     .row()
-    .text('Установить желаемое время', 'support')
+    .text('Установить желаемое время', 'choose-preferred-time')
     .row()
     .text('Как использовать бот в групповом чате?', 'groupchat')
     .row()
@@ -50,7 +50,10 @@ const timeZoneKeyboardThree = new InlineKeyboard()
     .text('UTC -1 (Кабо-Верде, Азорские острова)', '-1').row()
     .text('⬅️⬅️⬅️ НАЗАД', 'pagetwo');
 
-    const timeZoneMap = {
+const backKeyboard = new InlineKeyboard()
+    .text('Назад в главное меню', 'mainmenu').row()
+
+const timeZoneMap = {
         '0': 'UTC +0 (Британия, Западная Африка)',
         '1': 'UTC +1 (Европа, Центральная Африка)',
         '2': 'UTC +2 (Калининград, Восточная Европа)',
@@ -83,4 +86,4 @@ const timeZoneKeyboardThree = new InlineKeyboard()
         '-1': 'UTC -1 (Кабо-Верде, Азорские острова)',
       };
 
-    module.exports = { menuKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap };
+    module.exports = { backKeyboard, menuKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap };
