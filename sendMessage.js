@@ -10,7 +10,7 @@ const bot = new Bot(process.env.BOT_API_KEY); // инициализация бо
  const saintsOfToday = path.join(__dirname, 'saintsOfToday.json'); // API/DAY запрос, святые и праздники дня
 const textsOfToday = path.join(__dirname, 'textsOfToday.json');
 
-function sendInfoToUser() {
+/* function sendInfoToUser() {
     let today = new Date();
     let year = today.getFullYear();
     let month = (today.getMonth() + 1).toString().padStart(2, '0');
@@ -58,7 +58,7 @@ ${texts}
       `
 return message;
    
-}
+} */
 
 
 
