@@ -60,7 +60,7 @@ bot.command('start', async (ctx) => {
   let userInfo;
   let chatType;
   if (ctx.chat.type === 'private') {
-    userInfo = `Name: ${ctx.from.first_name} ${ctx.from.last_name} // Username: @${ctx.from.username} // Lang: ${ctx.from.language_code}`;
+    userInfo = `Name: ${ctx.from.first_name || ''} ${ctx.from.last_name || ''} // Username: @${ctx.from.username || 'N/A'} // Lang: ${ctx.from.language_code || 'N/A'}`;
     chatType = 'PRIVATE'
   } else {
     userInfo = `Group Name: ${ctx.chat.title} // Admin @${ctx.from.username} // Group ID: ${ctx.chat.id}`;

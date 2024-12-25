@@ -2,11 +2,9 @@ require('dotenv').config();
 const { obtainData } = require('../../functions/obtainData.js')
 const { updateData, deleteOutdatedData } = require('../../db/db.js')
 
-async function fetchAllData() {
-    // DEBUG
-    const apiKey = process.env.AZBYKA_API_KEY;
-  console.log('API Key in fetchAllData:', apiKey);
-  // DEBUG OVER
+const apiKey = process.env.AZBYKA_API_KEY;
+
+async function getAllData() {
     const currentDate = new Date();
     const dates = [];
 
@@ -40,4 +38,4 @@ async function fetchAllData() {
     deleteOutdatedData(twoDaysAgo.toISOString().split('T')[0]);
 }
 
-fetchAllData()
+getAllData()
