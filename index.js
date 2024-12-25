@@ -5,14 +5,14 @@ const fs = require('fs');
 const path = require('path');
 const { autoRetry } = require("@grammyjs/auto-retry");
 const { hydrate } = require("@grammyjs/hydrate");
-const { getNewDate } = require('./obtainData.js');
-const { sendInfoNow, sendInfoToUser } = require('./sendMessage.js')
+const { getNewDate } = require('./functions/obtainData.js');
+const { sendInfoNow, sendInfoToUser } = require('./functions/sendMessage.js')
 
 const { addUser,
   removeUser,
   updateTimezone,
   updatePreferredTime,
-  countUsers } = require('./db.js');
+  countUsers } = require('./db/db.js');
 
 const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap } = require('./keyboards.js')
 

@@ -1,6 +1,8 @@
-require('dotenv').config();
+require('dotenv').config({ path: '../.env' });
 const sanitizeHtml = require('sanitize-html')
-const { updateData, deleteOutdatedData, getLatestDate } = require('./db.js');
+const { db, updateData, deleteOutdatedData, getLatestDate } = require('../db/db.js');
+
+
 
 /* let today = new Date();
 let year = today.getFullYear();
@@ -16,8 +18,9 @@ let day = today.getDate().toString().padStart(2, '0'); */
     -------
 */
 
-async function obtainData(year, month, day) {
-
+async function obtainData(year, month, day, apiKey) {
+    // DEBUG
+    console.log("API Key in obtainData.js during request:", process.env.AZBYKA_API_KEY)
     //добавляем нули для корректного запроса по апи
     month = month.toString().padStart(2, '0');
     day = day.toString().padStart(2, '0');
@@ -29,7 +32,7 @@ async function obtainData(year, month, day) {
             try {
                 const response = await fetch(url, {
                     headers: {
-                        'authorization': `Bearer ${process.env.AZBYKA_API_KEY}`
+                        'authorization': `Bearer ${apiKey}`
                     }
                 });
                 if (!response.ok) {
@@ -168,6 +171,10 @@ ${texts}
 
 // CКАЧАТЬ ВСЕ 10 ДНЕЙ
 async function fetchAllData() {
+    // DEBUG
+    const apiKey = process.env.AZBYKA_API_KEY;
+  console.log('API Key in fetchAllData:', apiKey);
+  // DEBUG OVER
     const currentDate = new Date();
     const dates = [];
 
@@ -199,6 +206,8 @@ async function fetchAllData() {
     const twoDaysAgo = new Date(currentDate);
     twoDaysAgo.setDate(currentDate.getDate() - 3);
     deleteOutdatedData(twoDaysAgo.toISOString().split('T')[0]);
+
+
 }
 
 // СКАЧАТЬ НОВУЮ ДАТУ 
@@ -235,8 +244,8 @@ async function getNewDate() {
 }
 
 
-
 module.exports = {
+    obtainData,
     getNewDate,
     fetchAllData
 }

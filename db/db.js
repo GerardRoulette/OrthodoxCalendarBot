@@ -1,5 +1,7 @@
+const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('database.db');
+const dbPath = path.resolve(__dirname, 'database.db');
+const db = new sqlite3.Database(dbPath);
 
 // создать таблицу если ее нет
 db.serialize(() => {
