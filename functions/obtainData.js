@@ -204,6 +204,5 @@ async function getNewDate() {
 
 module.exports = {
     obtainData,
-    getNewDate,
-    fetchAllData
+    getNewDate
 }

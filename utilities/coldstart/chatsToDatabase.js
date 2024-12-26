@@ -10,7 +10,7 @@ const chats = JSON.parse(fs.readFileSync('chats.json', 'utf8'));
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms)); // боюсь заспамить АПИ телеги
 
 
-async function processChats() {
+async function chatsToDatabase() {
   for (const chatId of chats) {
     // чек на тему есть ли чат айди в БД
     db.get(`SELECT chatId FROM users WHERE chatId = ?`, [chatId], async (err, row) => {
@@ -42,8 +42,8 @@ async function processChats() {
         console.log(`Chat ID ${chatId} already exists in the database.`);
       }
     });
-    await delay(1000);
+    await delay(500); // избегаем спама (на всякий случай)
   }
 }
 
-processChats();
+chatsToDatabase();

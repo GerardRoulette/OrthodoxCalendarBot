@@ -14,7 +14,7 @@ const { addUser,
   updatePreferredTime,
   countUsers } = require('./db/db.js');
 
-const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap } = require('./keyboards.js')
+const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap } = require('./utilities/keyboards.js') // DOUBLE CHECK
 
 const bot = new Bot(process.env.BOT_API_KEY); // инициализация бота
 const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
@@ -30,8 +30,8 @@ bot.use(session({
   initial: () => ({}), // сессия для запроса времени
 }));
 
-// СКАЧИВАЕМ ДАННЫЕ в 0-02 ("2 0 * * *"), запись в файл 
-schedule.scheduleJob("2 0 * * *", () => {
+// СКАЧИВАЕМ ДАННЫЕ в 0-01 ("1 0 * * *"), запись в файл 
+schedule.scheduleJob("1 0 * * *", () => {
   obtainData();
 });
 

@@ -34,7 +34,7 @@ async function getAllData() {
 
     //удаляем устаревшее если есть
     const twoDaysAgo = new Date(currentDate);
-    twoDaysAgo.setDate(currentDate.getDate() - 3);
+    twoDaysAgo.setDate(currentDate.getDate() - 2);
     deleteOutdatedData(twoDaysAgo.toISOString().split('T')[0]);
 }
 

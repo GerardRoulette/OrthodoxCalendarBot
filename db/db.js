@@ -20,69 +20,110 @@ db.serialize(() => {
 });
 
 // добавляем юзера
-function addUser(chatId, userInfo, chatType) {
-  const stmt = db.prepare("INSERT OR REPLACE INTO users (chatId, userInfo, chatType) VALUES (?, ?, ?)");
-  stmt.run(chatId, userInfo, chatType);
-  stmt.finalize();
+async function addUser(chatId, userInfo, chatType) {
+  return new Promise((resolve, reject) => {
+    const stmt = db.prepare(
+      "INSERT OR REPLACE INTO users (chatId, userInfo, chatType) VALUES (?, ?, ?)"
+    );
+    stmt.run(chatId, userInfo, chatType, function (err) {
+      if (err) reject(err);
+      else resolve(this.lastID);
+    });
+    stmt.finalize();
+  });
 }
+
 // удаляем юзера
-function removeUser(chatId) {
-  const stmt = db.prepare("DELETE FROM users WHERE chatId = ?");
-  stmt.run(chatId);
-  stmt.finalize();
+async function removeUser(chatId) {
+  return new Promise((resolve, reject) => {
+    const stmt = db.prepare("DELETE FROM users WHERE chatId = ?");
+    stmt.run(chatId, function (err) {
+      if (err) reject(err);
+      else resolve(this.changes);
+    });
+    stmt.finalize();
+  });
 }
+
 // меняем timezone для юзера
-function updateTimezone(chatId, timezone) {
-  const stmt = db.prepare("UPDATE users SET timezone = ? WHERE chatId = ?");
-  stmt.run(timezone, chatId);
-  stmt.finalize();
+async function updateTimezone(chatId, timezone) {
+  return new Promise((resolve, reject) => {
+    const stmt = db.prepare("UPDATE users SET timezone = ? WHERE chatId = ?");
+    stmt.run(timezone, chatId, function (err) {
+      if (err) reject(err);
+      else resolve(this.changes);
+    });
+    stmt.finalize();
+  });
 }
 
 // меняем preferredTime для юзера
-function updatePreferredTime(chatId, preferredTime) {
-  const stmt = db.prepare("UPDATE users SET preferredTime = ? WHERE chatId = ?");
-  stmt.run(preferredTime, chatId);
-  stmt.finalize();
-}
-// считаем юзеров
-function countUsers(callback) {
-  db.get("SELECT COUNT(*) AS count FROM users", (err, row) => {
-    if (err) {
-      callback(err, null);
-    } else {
-      callback(null, row.count);
-    }
+async function updatePreferredTime(chatId, preferredTime) {
+  return new Promise((resolve, reject) => {
+    const stmt = db.prepare("UPDATE users SET preferredTime = ? WHERE chatId = ?");
+    stmt.run(preferredTime, chatId, function (err) {
+      if (err) reject(err);
+      else resolve(this.changes);
+    });
+    stmt.finalize();
   });
 }
+
+// считаем юзеров
+async function countUsers() {
+  return new Promise((resolve, reject) => {
+    db.get("SELECT COUNT(*) AS count FROM users", (err, row) => {
+      if (err) reject(err);
+      else resolve(row.count);
+    });
+  });
+}
+
 // добавляем сообщения дня в БД
-function updateData(date, message) {
-  const stmt = db.prepare(`
-    INSERT INTO data (date, message)
-    VALUES (?, ?)
-    ON CONFLICT(date) DO UPDATE SET
-    message=excluded.message;
-  `);
-  stmt.run(date, message);
-  stmt.finalize();
+async function updateData(date, message) {
+  return new Promise((resolve, reject) => {
+    const stmt = db.prepare(`
+      INSERT INTO data (date, message)
+      VALUES (?, ?)
+      ON CONFLICT(date) DO UPDATE SET message=excluded.message;
+    `);
+    stmt.run(date, message, function (err) {
+      if (err) reject(err);
+      else resolve(this.lastID);
+    });
+    stmt.finalize();
+  });
 }
 
 // удаляем устаревшие сообщения дня из БД
-function deleteOutdatedData(currentDate) {
-  const stmt = db.prepare(`
-    DELETE FROM data WHERE date < ?;
-  `);
-  stmt.run(currentDate);
-  stmt.finalize();
+async function deleteOutdatedData(currentDate) {
+  return new Promise((resolve, reject) => {
+    const stmt = db.prepare("DELETE FROM data WHERE date < ?");
+    stmt.run(currentDate, function (err) {
+      if (err) reject(err);
+      else resolve(this.changes);
+    });
+    stmt.finalize();
+  });
 }
 
 // получаем последней даты из базы данных
-function getLatestDate(callback) {
-  db.get("SELECT MAX(date) AS latestDate FROM data", (err, row) => {
-    if (err) {
-      callback(err, null);
-    } else {
-      callback(null, row.latestDate);
-    }
+async function getLatestDate() {
+  return new Promise((resolve, reject) => {
+    db.get("SELECT MAX(date) AS latestDate FROM data", (err, row) => {
+      if (err) reject(err);
+      else resolve(row.latestDate);
+    });
+  });
+}
+
+// получаем сообщение по дате
+async function getMessageByDate(date) {
+  return new Promise((resolve, reject) => {
+    db.get("SELECT message FROM data WHERE date = ?", [date], (err, row) => {
+      if (err) reject(err);
+      else resolve(row ? row.message : null);
+    });
   });
 }
 
@@ -95,5 +136,6 @@ module.exports = {
   updateData,
   deleteOutdatedData,
   getLatestDate,
+  getMessageByDate,
   db
 };
