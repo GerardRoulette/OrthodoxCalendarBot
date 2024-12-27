@@ -1,10 +1,8 @@
 require('dotenv').config();
-const { Bot, InlineKeyboard, session } = require('grammy');
+const { bot, InlineKeyboard } = require('./utilities/bot.js')
 const schedule = require("node-schedule");
 const fs = require('fs');
 const path = require('path');
-const { autoRetry } = require("@grammyjs/auto-retry");
-const { hydrate } = require("@grammyjs/hydrate");
 const { getNewDate } = require('./functions/obtainData.js');
 const { cancelSchedule, restoreSchedules, scheduleMessage, saveSchedules } = require('./functions/sendMessage.js')
 
@@ -16,19 +14,14 @@ const { addUser,
 
 const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap } = require('./utilities/keyboards.js') // DOUBLE CHECK
 
-const bot = new Bot(process.env.BOT_API_KEY); // инициализация бота
 const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
 const saintsOfToday = path.join(__dirname, 'saintsOfToday.json'); // API/DAY запрос, святые и праздники дня
 const textsOfToday = path.join(__dirname, 'textsOfToday.json');
 
-bot.use(hydrate());
 /* 
 ЗАПРОС ДАННЫХ С АЗБУКИ
 */
 
-bot.use(session({
-  initial: () => ({}), // сессия для запроса времени
-}));
 
 // СКАЧИВАЕМ ДАННЫЕ в 0-01-01 ("1 0 0 * * *"), запись в файл 
 schedule.scheduleJob("1 0 0 * * *", () => {
@@ -210,5 +203,4 @@ bot.on('my_chat_member', async (ctx) => {
   }
 });
 
-bot.api.config.use(autoRetry());
 bot.start();

@@ -1,12 +1,9 @@
 require('dotenv').config();
-const { Bot } = require('grammy');
 const fs = require('fs');
 const path = require('path');
 const schedule = require('node-schedule');
 const { db, getMessageByDate } = require('../db/db.js');
-const { autoRetry } = require("@grammyjs/auto-retry");
-
-const bot = new Bot(process.env.BOT_API_KEY); // инициализация бота
+const { bot } = require('../utilities/bot.js')
 
 // храним Мап с расписаниями для удаления и добавления по одному вместо всех сразу
 const scheduleMap = new Map();
@@ -79,7 +76,6 @@ function scheduleMessage(chatId, timezone, preferredTime) {
 
 
 
-bot.api.config.use(autoRetry());
 
 // sendInfoNow();
 // bot.start();

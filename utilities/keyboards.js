@@ -1,4 +1,4 @@
-const { InlineKeyboard } = require('grammy');
+const { InlineKeyboard } = require('./bot.js');
 
 const menuKeyboard = new InlineKeyboard()
     .text('Установить часовой пояс', 'choose-timezone')
