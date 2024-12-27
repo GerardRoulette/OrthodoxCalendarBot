@@ -3,7 +3,7 @@ const { Bot } = require('grammy');
 const fs = require('fs');
 const path = require('path');
 const schedule = require('node-schedule');
-const { getMessageByDate } = require('../db/db.js');
+const { db, getMessageByDate } = require('../db/db.js');
 const { autoRetry } = require("@grammyjs/auto-retry");
 
 const bot = new Bot(process.env.BOT_API_KEY); // инициализация бота
@@ -13,11 +13,11 @@ const scheduleMap = new Map();
 const scheduleFile = './schedule.json'
 
 // Отмена одного конкретного расписания по чат айди
-function cancelMessage(chatId) {
+function cancelSchedule(chatId) {
     if (scheduleMap.has(chatId)) {
         scheduleMap.get(chatId).cancel();
         scheduleMap.delete(chatId);
-        persistSchedules();
+        saveSchedules();
     }
 }
 
@@ -43,22 +43,29 @@ function restoreSchedules() {
     }
 }
 
-// TEST
+
 function scheduleMessage(chatId, timezone, preferredTime) {
     const [hour, minute] = preferredTime.split(':').map(Number);
-    const utcOffset = timezone - 3; 
-    const scheduleTime = new Date();
     
-    scheduleTime.setUTCHours(hour - utcOffset, minute, 0, 0); // User's local time in UTC
+    // вычисляем preferredtime в utc+0
+  const utcPreferredTime = new Date();
+  utcPreferredTime.setUTCHours(hour - timezone, minute, 0, 0);
+
+  // конвертируем во время сервера (+3 Москва)
+  const serverTime = new Date(utcPreferredTime);
+  serverTime.setHours(serverTime.getHours() + 3); // Convert from UTC+0 to server local time
+
+  // если время уже прошло, ставим на следующий
+  if (serverTime < new Date()) {
+    serverTime.setDate(serverTime.getDate() + 1);
+  }
+
   
-    if (scheduleTime < new Date()) {
-      scheduleTime.setDate(scheduleTime.getDate() + 1); // Adjust for next day if time has passed
-    }
+    // отмена существующего расписания если оно есть в мапе (если нет ничего не случится, ошибки не будет)
+    cancelSchedule(chatId);
   
-    // Cancel existing job if any
-    cancelMessage(chatId);
-  
-    const job = schedule.scheduleJob(scheduleTime, async () => {
+    const job = schedule.scheduleJob(serverTime, async () => {
+    // тут идея в том чтобы юзер получал календарь именно той даты которая ему нужна
       const userDate = new Date(new Date().toLocaleDateString('en-CA', { timeZone: `UTC${timezone >= 0 ? '+' : ''}${timezone}` }));
       const messageData = await getMessageByDate(userDate.toISOString().split('T')[0]);
       if (messageData) {
@@ -69,7 +76,7 @@ function scheduleMessage(chatId, timezone, preferredTime) {
     scheduleMap.set(chatId, job);
     saveSchedules();
   }
-// STOP TEST
+
 
 
 bot.api.config.use(autoRetry());
@@ -78,5 +85,8 @@ bot.api.config.use(autoRetry());
 // bot.start();
 
 module.exports = {
-    restoreSchedules
+    restoreSchedules,
+    scheduleMessage,
+    cancelSchedule,
+    saveSchedules
 }

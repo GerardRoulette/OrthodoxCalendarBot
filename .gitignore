@@ -3,6 +3,7 @@ chats.json
 saintsOfToday.json
 textsOfToday.json
 database.db
+schedule.json
 # Ignore logs
 *.log
 

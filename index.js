@@ -6,13 +6,13 @@ const path = require('path');
 const { autoRetry } = require("@grammyjs/auto-retry");
 const { hydrate } = require("@grammyjs/hydrate");
 const { getNewDate } = require('./functions/obtainData.js');
-const { sendInfoNow, sendInfoToUser } = require('./functions/sendMessage.js')
+const { cancelSchedule, restoreSchedules, scheduleMessage, saveSchedules } = require('./functions/sendMessage.js')
 
 const { addUser,
   removeUser,
   updateTimezone,
   updatePreferredTime,
-  countUsers } = require('./db/db.js');
+  getMessageByDate} = require('./db/db.js');
 
 const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap } = require('./utilities/keyboards.js') // DOUBLE CHECK
 
@@ -30,9 +30,9 @@ bot.use(session({
   initial: () => ({}), // сессия для запроса времени
 }));
 
-// СКАЧИВАЕМ ДАННЫЕ в 0-01 ("1 0 * * *"), запись в файл 
-schedule.scheduleJob("1 0 * * *", () => {
-  obtainData();
+// СКАЧИВАЕМ ДАННЫЕ в 0-01-01 ("1 0 0 * * *"), запись в файл 
+schedule.scheduleJob("1 0 0 * * *", () => {
+  getNewDate();
 });
 
 
@@ -40,25 +40,12 @@ schedule.scheduleJob("1 0 * * *", () => {
 РАБОТА С ЧАТАМИ 
 */
 
-function importChats() { // ДОСТАЕМ СПИСОК КОНТАКТОВ ИЗ ФАЙЛА
-  if (fs.existsSync(chatsList)) {
-    return JSON.parse(fs.readFileSync(chatsList, 'utf8'));
-  }
-  return [];
-}
-
-// ЗАПИСЫВАЕМ КОНТАКТЫ В ФАЙЛ
-function exportChats(chats) {
-  fs.writeFileSync(chatsList, JSON.stringify(chats, null, 2), 'utf8');
-}
-
-let chats = importChats();
-
 
 bot.command('start', async (ctx) => {
   // запись в БД
   let userInfo;
   let chatType;
+  const date = new Date();
   if (ctx.chat.type === 'private') {
     userInfo = `Name: ${ctx.from.first_name || ''} ${ctx.from.last_name || ''} // Username: @${ctx.from.username || 'N/A'} // Lang: ${ctx.from.language_code || 'N/A'}`;
     chatType = 'PRIVATE'
@@ -89,16 +76,16 @@ bot.command('start', async (ctx) => {
   }
   );
   await ctx.reply( // приветственное сообщение
-    sendInfoToUser(), {
+    await getMessageByDate(date.toISOString().split('T')[0]), {
     parse_mode: "HTML",
     disable_web_page_preview: true
   }
   );
+  cancelSchedule(ctx.chat.id)
+  scheduleMessage(ctx.chat.id, '3', '8:30');
+  saveSchedules();
 });
 
-schedule.scheduleJob("*/10 * * * *", () => {
-  sendInfoNow();
-});
 
 
 /* 
