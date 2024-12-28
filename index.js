@@ -4,13 +4,17 @@ const schedule = require("node-schedule");
 const fs = require('fs');
 const path = require('path');
 const { getNewDate } = require('./functions/obtainData.js');
-const { cancelSchedule, restoreSchedules, scheduleMessage, saveSchedules } = require('./functions/sendMessage.js')
+const { cancelSchedule, 
+  restoreSchedules,
+   scheduleMessage,
+    saveSchedules } = require('./functions/sendMessage.js')
 
 const { addUser,
   removeUser,
   updateTimezone,
   updatePreferredTime,
-  getMessageByDate} = require('./db/db.js');
+  getMessageByDate,
+  getUserSettings } = require('./db/db.js');
 
 const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap } = require('./utilities/keyboards.js') // DOUBLE CHECK
 
@@ -74,9 +78,7 @@ bot.command('start', async (ctx) => {
     disable_web_page_preview: true
   }
   );
-  cancelSchedule(ctx.chat.id)
   scheduleMessage(ctx.chat.id, '3', '8:30');
-  saveSchedules();
 });
 
 
@@ -98,8 +100,10 @@ bot.on('callback_query:data', async (ctx) => {
   if (timeZoneMap[data]) {
     // выбор таймзоны (если есть в мапе)
     const buttonText = timeZoneMap[data];
-    updateTimezone(ctx.chat.id, data);
+    await updateTimezone(ctx.chat.id, data);
     await ctx.callbackQuery.message.editText(`Ваш новый часовой пояс - ${buttonText}`);
+    const settings = await getUserSettings(ctx.message.chat.id);
+    await scheduleMessage(ctx.message.chat.id, settings.timezone, settings.preferredTime);
   } else if (data === 'mainmenu') {
     // обратно в главное меню
     await ctx.callbackQuery.message.editText('Выберите пункт меню', {
@@ -151,21 +155,26 @@ bot.on('callback_query:data', async (ctx) => {
 bot.on('message', async (ctx) => {
   if (ctx.session.awaitingPreferredTime) {
     const preferredTime = ctx.message.text;
-    // проверяем что время соответствует
     const timeRegex = /^(0?[0-9]|1\d|2[0-3]):([0-5]\d)$/;
-        if (timeRegex.test(preferredTime)) {
-      const chatId = ctx.message.chat.id;
-      await updatePreferredTime(chatId, preferredTime);
-      await ctx.reply(`Ваши сообщения будут приходить в ${preferredTime} по часовому поясу, который вы установили (по умолчанию это московское время).`);
-      // сбрасываем ожидание сообщения
-      ctx.session.awaitingPreferredTime = false;
-
+    
+    if (timeRegex.test(preferredTime)) {
+      try {
+        await updatePreferredTime(ctx.message.chat.id, preferredTime);
+        await ctx.reply(`Ваши сообщения будут приходить в ${preferredTime} по часовому поясу, который вы установили (по умолчанию это московское время).`);        
+        // сбросили флаг
+        ctx.session.awaitingPreferredTime = false;
+        const settings = await getUserSettings(ctx.message.chat.id);
+        await scheduleMessage(ctx.message.chat.id, settings.timezone, settings.preferredTime);
+      } catch (error) {
+        console.error('Error updating preferred time:', error);
+        await ctx.reply('Произошла ошибка при обновлении времени. Попробуйте еще раз.');
+      }
     } else {
+      // Invalid time format response
       await ctx.reply('НЕПРАВИЛЬНЫЙ ФОРМАТ ВРЕМЕНИ. Напоминаю, введите предпочитаемое время в 24-часовом формате ЧЧ:ММ (например, 23:14, 08:12, 19:59)', {
         reply_markup: backKeyboard,
       });
     }
-
   }
 });
 

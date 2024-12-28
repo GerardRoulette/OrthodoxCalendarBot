@@ -127,6 +127,30 @@ async function getMessageByDate(date) {
   });
 }
 
+async function getUserSettings(chatId, fields = ['preferredTime', 'timezone']) {
+  const allowedFields = ['preferredTime', 'timezone'];
+  const selectedFields = fields.filter(field => allowedFields.includes(field));
+
+  if (selectedFields.length === 0) {
+    throw new Error("Invalid fields requested.");
+  }
+
+  const query = `SELECT ${selectedFields.join(', ')} FROM users WHERE chatId = ?`;
+
+  return new Promise((resolve, reject) => {
+    db.get(query, [chatId], (err, row) => {
+      if (err) {
+        return reject(err);
+      }
+      if (!row) {
+        return reject(new Error("User not found."));
+      }
+      resolve(row);
+    });
+  });
+}
+
+
 module.exports = {
   addUser,
   removeUser,
@@ -137,5 +161,6 @@ module.exports = {
   deleteOutdatedData,
   getLatestDate,
   getMessageByDate,
+  getUserSettings,
   db
 };

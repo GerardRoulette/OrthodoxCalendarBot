@@ -51,31 +51,29 @@ function scheduleMessage(chatId, timezone, preferredTime) {
   // +24 % 24 в случае если негативное число получилось 
   const cronExpression = `${minute} ${localHour} * * *`;
 
-
   // отмена существующего расписания если оно есть в мапе (если нет ничего не случится, ошибки не будет)
   cancelSchedule(chatId);
 
   const job = schedule.scheduleJob(cronExpression, async () => {
     // тут идея в том чтобы юзер получал календарь именно той даты которая ему нужна
-    const userDate = new Date(new Date().toLocaleDateString('en-CA', { timeZone: `UTC${timezone >= 0 ? '+' : ''}${timezone}` }));
-    const messageData = await getMessageByDate(userDate.toISOString().split('T')[0]);
+    const userDate = new Date(
+      new Date().toLocaleDateString('en-CA', {
+        timeZone: `Etc/GMT${timezone > 0 ? '-' : '+'}${Math.abs(timezone)}`,
+      }))
+    const message = await getMessageByDate(userDate.toISOString().split('T')[0]);
 
-    if (messageData) {
-      bot.api.sendMessage(chatId, messageData.message, { parse_mode: 'HTML' });
+    if (message) {
+      bot.api.sendMessage(chatId, message, {
+        parse_mode: 'HTML', disable_web_page_preview: true
+      });
     }
   });
 
-  // Store the job for later cancellation or reference
+  // сохраняем в мап, сейвим
   scheduleMap.set(chatId, job);
-
   saveSchedules();
 }
 
-
-
-
-// sendInfoNow();
-// bot.start();
 
 module.exports = {
   restoreSchedules,
