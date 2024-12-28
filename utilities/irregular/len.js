@@ -1,4 +1,5 @@
 const len = [
+  
 ]
 
 function getlen () {

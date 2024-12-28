@@ -1,11 +1,10 @@
 require('dotenv').config();
 const fs = require('fs');
-const { Bot } = require('grammy'); 
 const { db, addUser } = require('../../db/db.js');
-const bot = new Bot(process.env.BOT_API_KEY); 
+const { bot } = require('../bot.js')
 
 // файл с чат айди
-const chats = JSON.parse(fs.readFileSync('chats.json', 'utf8'));
+const chats = JSON.parse(fs.readFileSync('../../chats.json', 'utf8'));
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms)); // боюсь заспамить АПИ телеги
 

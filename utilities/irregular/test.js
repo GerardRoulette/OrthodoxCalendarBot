@@ -1,4 +1,3 @@
-const { getMessageByDate } = require('../../db/db.js');
+require('dotenv').config();
 
-const message = getMessageByDate('2024-12-26')
-console.log(message)
+console.log('BOT_API_KEY:', process.env.BOT_API_KEY);

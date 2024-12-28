@@ -4,10 +4,10 @@ const schedule = require("node-schedule");
 const fs = require('fs');
 const path = require('path');
 const { getNewDate } = require('./functions/obtainData.js');
-const { cancelSchedule, 
+const { cancelSchedule,
   restoreSchedules,
-   scheduleMessage,
-    saveSchedules } = require('./functions/sendMessage.js')
+  scheduleMessage,
+  saveSchedules } = require('./functions/sendMessage.js')
 
 const { addUser,
   removeUser,
@@ -151,16 +151,16 @@ bot.on('callback_query:data', async (ctx) => {
   await ctx.answerCallbackQuery();
 });
 
-// TEST
+// листенер назначения предпочитаемого времени (пункт меня запускает флаг true, если он true то вперед)
 bot.on('message', async (ctx) => {
   if (ctx.session.awaitingPreferredTime) {
     const preferredTime = ctx.message.text;
     const timeRegex = /^(0?[0-9]|1\d|2[0-3]):([0-5]\d)$/;
-    
+
     if (timeRegex.test(preferredTime)) {
       try {
         await updatePreferredTime(ctx.message.chat.id, preferredTime);
-        await ctx.reply(`Ваши сообщения будут приходить в ${preferredTime} по часовому поясу, который вы установили (по умолчанию это московское время).`);        
+        await ctx.reply(`Ваши сообщения будут приходить в ${preferredTime} по часовому поясу, который вы установили (по умолчанию это московское время).`);
         // сбросили флаг
         ctx.session.awaitingPreferredTime = false;
         const settings = await getUserSettings(ctx.message.chat.id);
@@ -193,7 +193,7 @@ bot.api.setMyCommands([
   { command: 'setup', description: 'Настройки' },
 ]);
 
-schedule.scheduleJob("5 * * * *", () => {
+schedule.scheduleJob("1 0 * * * *", () => {
   getNewDate();
 });
 
@@ -209,6 +209,7 @@ bot.on('my_chat_member', async (ctx) => {
         console.error('Error deleting user from database:', err);
       }
     });
+    cancelSchedule(chatId);
   }
 });
 
