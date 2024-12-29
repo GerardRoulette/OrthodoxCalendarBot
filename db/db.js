@@ -127,6 +127,7 @@ async function getMessageByDate(date) {
   });
 }
 
+// получаем текущие настройки юзера
 async function getUserSettings(chatId, fields = ['preferredTime', 'timezone']) {
   const allowedFields = ['preferredTime', 'timezone'];
   const selectedFields = fields.filter(field => allowedFields.includes(field));
@@ -150,6 +151,14 @@ async function getUserSettings(chatId, fields = ['preferredTime', 'timezone']) {
   });
 }
 
+async function getAllUsers() {
+  return new Promise((resolve, reject) => {
+    db.all("SELECT chatId, timezone, preferredTime FROM users", (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows);
+    });
+  });
+}
 
 module.exports = {
   addUser,
@@ -162,5 +171,6 @@ module.exports = {
   getLatestDate,
   getMessageByDate,
   getUserSettings,
+  getAllUsers,
   db
 };

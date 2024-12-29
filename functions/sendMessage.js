@@ -2,12 +2,13 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const schedule = require('node-schedule');
-const { db, getMessageByDate } = require('../db/db.js');
+const { db, getMessageByDate, getAllUsers } = require('../db/db.js');
 const { bot } = require('../utilities/bot.js')
 
 // храним Мап с расписаниями для удаления и добавления по одному вместо всех сразу
 const scheduleMap = new Map();
-const scheduleFile = './schedule.json'
+const rootFolder = path.resolve(__dirname, '../');
+const scheduleFile = path.join(rootFolder, 'schedule.json');
 
 // Отмена одного конкретного расписания по чат айди
 function cancelSchedule(chatId) {
@@ -25,19 +26,6 @@ function saveSchedules() {
     nextInvocation: job.nextInvocation().toISOString(),
   }));
   fs.writeFileSync(scheduleFile, JSON.stringify(schedules, null, 2));
-}
-
-// пересоздание всех расписаний
-function restoreSchedules() {
-  if (fs.existsSync(scheduleFile)) {
-    const schedules = JSON.parse(fs.readFileSync(scheduleFile, 'utf-8'));
-    schedules.forEach(({ chatId, nextInvocation }) => {
-      const jobTime = new Date(nextInvocation);
-      if (jobTime > new Date()) {
-        scheduleMessage(chatId, ...getUserDetails(chatId)); // Fetch user details from DB
-      }
-    });
-  }
 }
 
 
@@ -75,9 +63,39 @@ function scheduleMessage(chatId, timezone, preferredTime) {
 }
 
 
+// пересоздание всех расписаний из JSON
+function restoreSchedules() {
+  if (fs.existsSync(scheduleFile)) {
+    const schedules = JSON.parse(fs.readFileSync(scheduleFile, 'utf-8'));
+    schedules.forEach(({ chatId, nextInvocation }) => {
+      const jobTime = new Date(nextInvocation);
+      if (jobTime > new Date()) {
+        scheduleMessage(chatId, ...getUserDetails(chatId)); // Fetch user details from DB
+      }
+    });
+  }
+}
+async function scheduleAllUsers() {
+  try {
+    const users = await getAllUsers();
+    console.table(users)
+    for (const user of users) {
+      const { chatId, timezone, preferredTime } = user; 
+      scheduleMessage(chatId, timezone, preferredTime);
+    }
+    saveSchedules()
+    console.log('All user schedules have been created successfully!');
+  } catch (error) {
+    console.error('Error creating schedules for all users:', error);
+  }
+}
+
+
+
 module.exports = {
   restoreSchedules,
   scheduleMessage,
   cancelSchedule,
-  saveSchedules
+  saveSchedules,
+  scheduleAllUsers
 }
