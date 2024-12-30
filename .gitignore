@@ -4,6 +4,8 @@ saintsOfToday.json
 textsOfToday.json
 database.db
 schedule.json
+/utilities/refreshToken.js
+
 # Ignore logs
 *.log
 

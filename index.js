@@ -7,7 +7,9 @@ const { getNewDate } = require('./functions/obtainData.js');
 const { cancelSchedule,
   restoreSchedules,
   scheduleMessage,
-  saveSchedules } = require('./functions/sendMessage.js')
+  saveSchedules } = require('./functions/sendMessage.js');
+
+const refreshAzbykaToken = require('./utilities/refreshToken');
 
 const { addUser,
   removeUser,
@@ -25,6 +27,18 @@ const textsOfToday = path.join(__dirname, 'textsOfToday.json');
 /* 
 ЗАПРОС ДАННЫХ С АЗБУКИ
 */
+
+const refreshAzbykaToken = require('./utilities/refreshToken');
+
+// Schedule the token refresh every 30 days
+schedule.scheduleJob('0 0 0 */29 * *', async () => {
+    try {
+        await refreshAzbykaToken();
+        console.log('API токен обновлен');
+    } catch (error) {
+        console.error('ОШИБКА ПРИ ОБНОВЛЕНИИ API ТОКЕНА: ', error.message);
+    }
+});
 
 
 // СКАЧИВАЕМ ДАННЫЕ в 0-01-01 ("1 0 0 * * *"), запись в файл 

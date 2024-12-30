@@ -3,7 +3,6 @@ const sanitizeHtml = require('sanitize-html')
 const { db, updateData, deleteOutdatedData, getLatestDate } = require('../db/db.js');
 
 
-
 /* let today = new Date();
 let year = today.getFullYear();
 let month = (today.getMonth() + 1).toString().padStart(2, '0');
@@ -35,34 +34,36 @@ async function obtainData(year, month, day, apiKey) {
                     }
                 });
                 if (!response.ok) {
-                    throw new Error(`API DAY - Response status: ${response.status} --- ${response.text}`);
+                    throw new Error(`API DAY - Response status: ${response.status} --- ${await response.text()}`);
                 }
                 const json = await response.json();
                 return JSON.stringify(json, null, 2);
             } catch (error) {
                 console.error('Error:', error.message);
-                setTimeout(getSaintsFromAzbyka, 300000)
+                setTimeout(() => getSaintsFromAzbyka(), 3000000);
             }
         }
 
         // CКАЧИВАЕМ ПО СТАРОМУ АПИ РАДИ ССЫЛОК НА БИБЛИЮ
         async function getTextsFromAzbyka() {
             const url = `https://azbyka.ru/days/api/cache_dates?date%5Bexact%5D=${year}-${month}-${day}`;
+            console.log("Request URL:", url);
+            console.log("Authorization Header:", `Bearer ${apiKey}`);
             try {
                 const response = await fetch(url, {
                     headers: {
-                        'authorization': `Bearer ${process.env.AZBYKA_API_KEY}`
+                        'authorization': `Bearer ${apiKey}`
                     }
                 });
                 if (!response.ok) {
-                    throw new Error(`CACHE DATE - Response status: ${response.status} --- ${response.text}`);
+                    throw new Error(`CACHE DATE - Response status: ${response.status} --- ${await response.text()}`);
                 }
 
                 const json = await response.json();
                 return await json; // просто возвращаем json, чтобы его распилить и достать текст с id 1
             } catch (error) {
                 console.error(error.message);
-                setTimeout(getTextsFromAzbyka, 300000)
+                setTimeout(() => getTextsFromAzbyka(), 3000000);
             }
         }
 
@@ -82,18 +83,19 @@ async function obtainData(year, month, day, apiKey) {
             try {
                 const response = await fetch(url, {
                     headers: {
-                        'authorization': `Bearer ${process.env.AZBYKA_API_KEY}`
+                        'authorization': `Bearer ${apiKey}`
                     }
                 });
                 if (!response.ok) {
-                    throw new Error(`TEXTS - Response status: ${response.status} --- ${response.text}`);
+                    throw new Error(`TEXTS - Response status: ${response.status} --- ${await response.text()}`);
                 }
 
                 const json = await response.json();
                 return JSON.stringify(json, null, 2)
+
             } catch (error) {
                 console.error(error.message);
-                setTimeout(getTodayBibleReading, 300000)
+                setTimeout(() => getTodayBibleReading(), 3000000);
             }
         }
 
@@ -188,7 +190,7 @@ async function getNewDate() {
             const year = newDate.getFullYear();
             const month = newDate.getMonth() + 1;
             const day = newDate.getDate();
-            obtainData(year, month, day).then(message => {
+            obtainData(year, month, day, apiKey).then(message => {
                 updateData(newDateString, message);
                 // удаляем устаревшую дату
                 const twoDaysAgo = new Date(currentDate);

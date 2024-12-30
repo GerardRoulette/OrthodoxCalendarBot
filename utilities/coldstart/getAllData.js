@@ -1,8 +1,10 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const { obtainData } = require('../../functions/obtainData.js')
 const { updateData, deleteOutdatedData } = require('../../db/db.js')
 
-const apiKey = process.env.AZBYKA_API_KEY;
+let apiKey = process.env.AZBYKA_API_KEY;
+apiKey = apiKey.trim();
 
 async function getAllData() {
     const currentDate = new Date();

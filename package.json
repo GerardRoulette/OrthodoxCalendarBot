@@ -16,6 +16,7 @@
     "dotenv": "^16.4.7",
     "grammy": "^1.32.0",
     "grammy-middlewares": "^1.0.11",
+    "jsonwebtoken": "^9.0.2",
     "node-fetch": "^3.3.2",
     "node-schedule": "^2.1.1",
     "nodemon": "^3.1.7",
