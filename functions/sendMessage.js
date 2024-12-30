@@ -78,7 +78,6 @@ function restoreSchedules() {
 async function scheduleAllUsers() {
   try {
     const users = await getAllUsers();
-    console.table(users)
     for (const user of users) {
       const { chatId, timezone, preferredTime } = user; 
       scheduleMessage(chatId, timezone, preferredTime);
@@ -90,12 +89,21 @@ async function scheduleAllUsers() {
   }
 }
 
-
+async function sendMessageToEveryone(message) {
+  const users = await getAllUsers();
+  for (const user of users) {
+    const { chatId } = user;
+    bot.api.sendMessage(chatId, message, {
+      parse_mode: 'HTML', disable_web_page_preview: true
+    });
+  }
+}
 
 module.exports = {
   restoreSchedules,
   scheduleMessage,
   cancelSchedule,
   saveSchedules,
-  scheduleAllUsers
+  scheduleAllUsers,
+  sendMessageToEveryone
 }

@@ -28,17 +28,17 @@ const textsOfToday = path.join(__dirname, 'textsOfToday.json');
 ЗАПРОС ДАННЫХ С АЗБУКИ
 */
 
-const refreshAzbykaToken = require('./utilities/refreshToken');
+// ОБНОВЛЕНИЕ ТОКЕНА КАЖДЫЕ 29 ДНЕЙ
+// УБРАТЬ КОММЕНТ ПЕРЕД РЕЛИЗОМ
+//schedule.scheduleJob('0 0 0 */29 * *', async () => {
+//    try {
+ //       await refreshAzbykaToken();
+ //       console.log('API токен обновлен');
+ //   } catch (error) {
+ //       console.error('ОШИБКА ПРИ ОБНОВЛЕНИИ API ТОКЕНА: ', error.message);
+//   }
+//});
 
-// Schedule the token refresh every 30 days
-schedule.scheduleJob('0 0 0 */29 * *', async () => {
-    try {
-        await refreshAzbykaToken();
-        console.log('API токен обновлен');
-    } catch (error) {
-        console.error('ОШИБКА ПРИ ОБНОВЛЕНИИ API ТОКЕНА: ', error.message);
-    }
-});
 
 
 // СКАЧИВАЕМ ДАННЫЕ в 0-01-01 ("1 0 0 * * *"), запись в файл 

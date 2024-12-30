@@ -15,7 +15,7 @@ bot.api.config.use(autoRetry());
 bot.use(hydrate());
 
 bot.use(
-  onlyAdmin((ctx) => ctx.reply("ТОЛЬКО АДМИНЫ МОГУТ ЭТО ДЕЛАТЬ")),
+  onlyAdmin(),
 );
 
 bot.use(session({
