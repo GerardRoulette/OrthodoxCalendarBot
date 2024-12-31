@@ -1,3 +1,12 @@
 require('dotenv').config();
 
-console.log('BOT_API_KEY:', process.env.BOT_API_KEY);
+const schedule = require("node-schedule");
+schedule.scheduleJob('0 35 * * * *', async () => {
+    const date = new Date()
+    console.log('testing leading zero!!!!!!!!!!!!!!!!' + date)
+})
+
+schedule.scheduleJob('*/0000000000000000000000000000000000000021 * * * * *', async () => {
+    const date = new Date()
+    console.log('testing leading many zero'  + date)
+})

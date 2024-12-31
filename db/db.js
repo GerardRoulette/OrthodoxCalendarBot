@@ -151,6 +151,7 @@ async function getUserSettings(chatId, fields = ['preferredTime', 'timezone']) {
   });
 }
 
+// получаем данные по всем юзерам
 async function getAllUsers() {
   return new Promise((resolve, reject) => {
     db.all("SELECT chatId, timezone, preferredTime FROM users", (err, rows) => {

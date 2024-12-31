@@ -9,6 +9,11 @@ const menuKeyboard = new InlineKeyboard()
     .row()
     .text('Информация о разработчике');
 
+    const menuKeyboardGroup = new InlineKeyboard()
+    .text('Установить часовой пояс', 'choose-timezone')
+    .row()
+    .text('Установить желаемое время', 'choose-preferred-time')
+
 const timeZoneKeyboardOne = new InlineKeyboard()
     .text('UTC +0 (Британия, Западная Африка)', '0').row()
     .text('UTC +1 (Европа, Центральная Африка)', '1').row()
@@ -86,4 +91,4 @@ const timeZoneMap = {
         '-1': 'UTC -1 (Кабо-Верде, Азорские острова)',
       };
 
-    module.exports = { backKeyboard, menuKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap };
+    module.exports = { backKeyboard, menuKeyboard, menuKeyboardGroup, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap };

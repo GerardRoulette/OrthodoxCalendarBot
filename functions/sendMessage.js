@@ -30,6 +30,7 @@ function saveSchedules() {
 
 
 function scheduleMessage(chatId, timezone, preferredTime) {
+  console.log(`chatid: ${chatId} // timezone: ${timezone} // preftime: ${preferredTime}`)
   const [hour, minute] = preferredTime.split(':').map(Number);
   const localHour = (hour - timezone + 3 + 24) % 24;
   // 3 - таймзона сервера. +24 чтобы число точно было положительное. % 24 чтобы убрать лишние часы
@@ -70,7 +71,7 @@ function restoreSchedules() {
     schedules.forEach(({ chatId, nextInvocation }) => {
       const jobTime = new Date(nextInvocation);
       if (jobTime > new Date()) {
-        scheduleMessage(chatId, ...getUserDetails(chatId)); // Fetch user details from DB
+        scheduleMessage(chatId, ...getUserDetails(chatId)); // 
       }
     });
   }

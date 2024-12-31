@@ -1,13 +1,11 @@
 require('dotenv').config();
-const { bot, InlineKeyboard } = require('./utilities/bot.js')
+const { bot } = require('./utilities/bot.js')
 const schedule = require("node-schedule");
-const fs = require('fs');
-const path = require('path');
 const { getNewDate } = require('./functions/obtainData.js');
 const { cancelSchedule,
-  restoreSchedules,
   scheduleMessage,
-  saveSchedules } = require('./functions/sendMessage.js');
+  saveSchedules, 
+  restoreSchedules} = require('./functions/sendMessage.js');
 
 const refreshAzbykaToken = require('./utilities/refreshToken');
 
@@ -18,11 +16,7 @@ const { addUser,
   getMessageByDate,
   getUserSettings } = require('./db/db.js');
 
-const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap } = require('./utilities/keyboards.js') // DOUBLE CHECK
-
-const chatsList = path.join(__dirname, 'chats.json'); // файл с контактами
-const saintsOfToday = path.join(__dirname, 'saintsOfToday.json'); // API/DAY запрос, святые и праздники дня
-const textsOfToday = path.join(__dirname, 'textsOfToday.json');
+const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap, menuKeyboardGroup } = require('./utilities/keyboards.js') // DOUBLE CHECK
 
 /* 
 ЗАПРОС ДАННЫХ С АЗБУКИ
@@ -39,9 +33,9 @@ const textsOfToday = path.join(__dirname, 'textsOfToday.json');
 //   }
 //});
 
+restoreSchedules();
 
-
-// СКАЧИВАЕМ ДАННЫЕ в 0-01-01 ("1 0 0 * * *"), запись в файл 
+// СКАЧИВАЕМ ДАННЫЕ в 0-00-01 ("1 0 0 * * *"), запись в файл 
 schedule.scheduleJob("1 0 0 * * *", () => {
   getNewDate();
 });
@@ -92,7 +86,8 @@ bot.command('start', async (ctx) => {
     disable_web_page_preview: true
   }
   );
-  scheduleMessage(ctx.chat.id, '3', '8:30');
+  scheduleMessage(ctx.chat.id, '3', '8:30')
+  saveSchedules();
 });
 
 
@@ -103,44 +98,61 @@ bot.command('start', async (ctx) => {
 
 // ГЛАВНОЕ МЕНЮ 
 bot.command('setup', async (ctx) => {
-  await ctx.reply('Выберите пункт меню', {
-    reply_markup: menuKeyboard,
-  });
+  if (ctx.chat.type === 'private') {
+    await ctx.reply('Выберите пункт меню', {
+      parse_mode: "HTML",
+      reply_markup: menuKeyboard,
+    });
+  } else {
+    await ctx.reply('Выберите пункт меню. <b>Имейте ввиду, что только администраторы группы могут менять настройки бота</b>', {
+      parse_mode: "HTML",
+      reply_markup: menuKeyboardGroup,
+    });
+  }
 });
+  
 
 // ОБРАБОТКА ИНЛАЙН КЛАВИАТУР
 bot.on('callback_query:data', async (ctx) => {
   const data = ctx.callbackQuery.data;
+  // в случае если групповой чат а не личка, добавляем сообщение к интерфейсу.
+  const isGroupChat = ctx.chat.type === 'group' || ctx.chat.type === 'supergroup';
+  const adminMessage = isGroupChat ? ' <b>Имейте ввиду, что только администраторы группы могут менять настройки бота</b>' : '';
+
   if (timeZoneMap[data]) {
     // выбор таймзоны (если есть в мапе)
     const buttonText = timeZoneMap[data];
     await updateTimezone(ctx.chat.id, data);
     await ctx.callbackQuery.message.editText(`Ваш новый часовой пояс - ${buttonText}`);
-    const settings = await getUserSettings(ctx.message.chat.id);
-    await scheduleMessage(ctx.message.chat.id, settings.timezone, settings.preferredTime);
+    const settings = await getUserSettings(ctx.chat.id);
+    await scheduleMessage(ctx.chat.id, settings.timezone, settings.preferredTime);
   } else if (data === 'mainmenu') {
     // обратно в главное меню
-    await ctx.callbackQuery.message.editText('Выберите пункт меню', {
+    await ctx.callbackQuery.message.editText(`Выберите пункт меню.${adminMessage}`, {
+      parse_mode: "HTML",
       reply_markup: menuKeyboard,
     });
     await ctx.answerCallbackQuery();
   } else if (data === 'choose-timezone' || data === 'pageone') {
     // Выбор часового пояса - первая страница
-    await ctx.callbackQuery.message.editText('По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка:', {
+    await ctx.callbackQuery.message.editText(`По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка.${adminMessage}`, {
+      parse_mode: "HTML",
       reply_markup: timeZoneKeyboardOne,
     });
     await ctx.api.editMessageText;
     await ctx.answerCallbackQuery();
   } else if (data === 'pagetwo') {
     // Выбор часового пояса - вторая страница
-    await ctx.callbackQuery.message.editText('По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка:', {
+    await ctx.callbackQuery.message.editText(`По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка.${adminMessage}`, {
+      parse_mode: "HTML",
       reply_markup: timeZoneKeyboardTwo,
     });
     await ctx.api.editMessageText;
     await ctx.answerCallbackQuery();
   } else if (data === 'pagethree') {
     // Выбор часового пояса - третья страница
-    await ctx.callbackQuery.message.editText('По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка:', {
+    await ctx.callbackQuery.message.editText(`По умолчанию у всех пользователей часовой пояс Москвы (UTC+3). Если вы хотите установить другой часовой пояс, выберите его из списка.${adminMessage}`, {
+      parse_mode: "HTML",
       reply_markup: timeZoneKeyboardThree,
     });
     await ctx.api.editMessageText;
@@ -148,7 +160,8 @@ bot.on('callback_query:data', async (ctx) => {
 
   } else if (data === 'choose-preferred-time') {
     // Выбор времени
-    await ctx.callbackQuery.message.editText('Введите предпочитаемое время в 24-часовом формате ЧЧ:ММ (например, 23:14, 8:12, 19:59)', {
+    await ctx.callbackQuery.message.editText(`Введите предпочитаемое время в 24-часовом формате ЧЧ:ММ (например, 23:14, 8:12, 19:59).${adminMessage}`, {
+      parse_mode: "HTML",
       reply_markup: backKeyboard,
     })
     ctx.session.awaitingPreferredTime = false;
@@ -173,12 +186,20 @@ bot.on('message', async (ctx) => {
 
     if (timeRegex.test(preferredTime)) {
       try {
-        await updatePreferredTime(ctx.message.chat.id, preferredTime);
-        await ctx.reply(`Ваши сообщения будут приходить в ${preferredTime} по часовому поясу, который вы установили (по умолчанию это московское время).`);
+        const [, hours, minutes] = preferredTime.match(timeRegex);
+        // Убираем нолик из начала часа в случае если 08
+        const formattedHours = parseInt(hours, 10);
+        const formattedTime = `${formattedHours}:${minutes}`;
+        const timeZone = await getUserSettings(ctx.chat.id, ['timezone']);
+        await updatePreferredTime(ctx.chat.id, formattedTime);
+        await ctx.reply(`Ваши сообщения будут приходить в ${preferredTime} по часовому поясу ${timeZoneMap[timeZone.timezone]}`, {
+          parse_mode: "HTML",
+        });
         // сбросили флаг
         ctx.session.awaitingPreferredTime = false;
-        const settings = await getUserSettings(ctx.message.chat.id);
-        await scheduleMessage(ctx.message.chat.id, settings.timezone, settings.preferredTime);
+        const settings = await getUserSettings(ctx.chat.id);
+        await scheduleMessage(ctx.chat.id, settings.timezone, settings.preferredTime);
+        await saveSchedules();
       } catch (error) {
         console.error('Error updating preferred time:', error);
         await ctx.reply('Произошла ошибка при обновлении времени. Попробуйте еще раз.');
@@ -186,7 +207,8 @@ bot.on('message', async (ctx) => {
     } else {
       // Invalid time format response
       await ctx.reply('НЕПРАВИЛЬНЫЙ ФОРМАТ ВРЕМЕНИ. Напоминаю, введите предпочитаемое время в 24-часовом формате ЧЧ:ММ (например, 23:14, 08:12, 19:59)', {
-        reply_markup: backKeyboard,
+        parse_mode: "HTML",
+        reply_markup: backKeyboard
       });
     }
   }
@@ -195,6 +217,7 @@ bot.on('message', async (ctx) => {
 
 bot.callbackQuery('mainmenu', async (ctx) => {
   await ctx.callbackQuery.message.editText('Выберите пункт меню', {
+    parse_mode: "HTML",
     reply_markup: menuKeyboard,
   });
   await ctx.answerCallbackQuery();
