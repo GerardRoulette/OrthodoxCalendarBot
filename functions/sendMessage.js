@@ -29,8 +29,7 @@ function saveSchedules() {
   fs.writeFileSync(scheduleFile, JSON.stringify(schedules, null, 2));
 }
 
-
-
+// базовое, создаем расписание 
 function scheduleMessage(chatId, timezone, preferredTime) {
   const [hour, minute] = preferredTime.split(':').map(Number);
   const localHour = (hour - timezone + 3 + 24) % 24;

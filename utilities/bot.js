@@ -2,7 +2,7 @@ const path = require('path');
 const dotenv = require('dotenv');
 const envPath = path.resolve(__dirname, '../.env');
 dotenv.config({ path: envPath });
-const { onlyAdmin } = require('grammy-middlewares')
+const { onlyAdmin } = require('./onlyAdmin.js')
 const { Bot, InlineKeyboard, GrammyError, session } = require('grammy');
 const { autoRetry } = require('@grammyjs/auto-retry');
 const { hydrate } = require('@grammyjs/hydrate');
@@ -15,8 +15,10 @@ bot.api.config.use(autoRetry());
 bot.use(hydrate());
 
 bot.use(
-  onlyAdmin(),
+ onlyAdmin(),
 );
+
+
 
 bot.use(session({
     initial: () => ({}), // сессия для запроса времени

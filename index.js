@@ -175,9 +175,7 @@ ${isGroupChat ? '<b><u>Вы должны ОТВЕТИТЬ на это сообщ
   } 
   else if (data === 'groupchat') {
     // групповой чат инфо
-    await ctx.callbackQuery.message.editText(`Чтобы использовать бот-календарь в групповом чате, просто добавьте его (<code>@OrthodoxCalendar_Bot</code>) в свою группу.
-После этого отправьте в чат группы команду <code>/start@OrthodoxCalendar_Bot</code> и бот начнет отправлять туда информацию раз в сутки - по умолчанию в 8:30 утра по московскому времени.
-Чтобы изменить предпочитаемый часовой пояс или время, отправьте <code>/setup@OrthodoxCalendar_Bot</code> в чат группы и следуйте инструкциям.`, {
+    await ctx.callbackQuery.message.editText(process.env.GROUP_CHAT, {
       parse_mode: "HTML",
       reply_markup: backKeyboard,
     });
@@ -185,9 +183,10 @@ ${isGroupChat ? '<b><u>Вы должны ОТВЕТИТЬ на это сообщ
   }
   else if (data === 'developer') {
     // о разработчике
-    await ctx.callbackQuery.message.editText(`ЕУЫЕ ЕУЫЕ`, {
+    await ctx.callbackQuery.message.editText(process.env.DEVELOPER, {
       parse_mode: "HTML",
       reply_markup: backKeyboard,
+      disable_web_page_preview: true
     });
     await ctx.answerCallbackQuery();
   }
@@ -256,19 +255,21 @@ schedule.scheduleJob("1 0 * * * *", () => {
 });
 
 // УДАЛЕНИЕ ЮЗЕРА ЕСЛИ ЗАБЛОКИРОВАЛ БОТА
+
 bot.on('my_chat_member', async (ctx) => {
   const newChatMember = ctx.update.my_chat_member.new_chat_member;
   const chatId = ctx.update.my_chat_member.chat.id;
 
-  if (newChatMember.status === 'kicked') {
+  if (newChatMember.status === 'kicked' || newChatMember.status === 'left') {
     // если юзер заблокировал бота
-    removeUser(chatId, (err) => {
+    await removeUser(chatId, (err) => {
       if (err) {
         console.error('Error deleting user from database:', err);
       }
     });
     cancelSchedule(chatId);
   }
-});
+}); 
+
 
 bot.start();
