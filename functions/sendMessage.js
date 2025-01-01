@@ -2,7 +2,7 @@ require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
 const schedule = require('node-schedule');
-const { db, getMessageByDate, getAllUsers } = require('../db/db.js');
+const { getMessageByDate, getAllUsers, getUserSettings } = require('../db/db.js');
 const { bot } = require('../utilities/bot.js')
 
 // храним Мап с расписаниями для удаления и добавления по одному вместо всех сразу
@@ -12,8 +12,9 @@ const scheduleFile = path.join(rootFolder, 'schedule.json');
 
 // Отмена одного конкретного расписания по чат айди
 function cancelSchedule(chatId) {
-  if (scheduleMap.has(chatId)) {
-    scheduleMap.get(chatId).cancel();
+  const scheduleEntry = scheduleMap.get(chatId);
+  if (scheduleEntry && scheduleEntry.job) {
+    scheduleEntry.job.cancel(); 
     scheduleMap.delete(chatId);
     saveSchedules();
   }
@@ -23,14 +24,14 @@ function cancelSchedule(chatId) {
 function saveSchedules() {
   const schedules = Array.from(scheduleMap.entries()).map(([chatId, job]) => ({
     chatId,
-    nextInvocation: job.nextInvocation().toISOString(),
+    cronExpression: job.cronExpression, 
   }));
   fs.writeFileSync(scheduleFile, JSON.stringify(schedules, null, 2));
 }
 
 
+
 function scheduleMessage(chatId, timezone, preferredTime) {
-  console.log(`chatid: ${chatId} // timezone: ${timezone} // preftime: ${preferredTime}`)
   const [hour, minute] = preferredTime.split(':').map(Number);
   const localHour = (hour - timezone + 3 + 24) % 24;
   // 3 - таймзона сервера. +24 чтобы число точно было положительное. % 24 чтобы убрать лишние часы
@@ -53,29 +54,32 @@ function scheduleMessage(chatId, timezone, preferredTime) {
 
     if (message) {
       bot.api.sendMessage(chatId, message, {
-        parse_mode: 'HTML', disable_web_page_preview: true
+        parse_mode: 'HTML', 
+        disable_web_page_preview: true
       });
     }
   });
 
   // сохраняем в мап, сейвим
-  scheduleMap.set(chatId, job);
+  scheduleMap.set(chatId, { cronExpression, job });
   saveSchedules();
 }
 
 
 // пересоздание всех расписаний из JSON
-function restoreSchedules() {
+async function restoreSchedules() {
   if (fs.existsSync(scheduleFile)) {
     const schedules = JSON.parse(fs.readFileSync(scheduleFile, 'utf-8'));
-    schedules.forEach(({ chatId, nextInvocation }) => {
-      const jobTime = new Date(nextInvocation);
-      if (jobTime > new Date()) {
-        scheduleMessage(chatId, ...getUserDetails(chatId)); // 
+
+    for (const { chatId } of schedules) {
+      const user = await getUserSettings(chatId); 
+      if (user) {
+        scheduleMessage(chatId, user.timezone, user.preferredTime);
       }
-    });
+    }
   }
 }
+
 async function scheduleAllUsers() {
   try {
     const users = await getAllUsers();
@@ -84,27 +88,18 @@ async function scheduleAllUsers() {
       scheduleMessage(chatId, timezone, preferredTime);
     }
     saveSchedules()
-    console.log('All user schedules have been created successfully!');
+    console.log('scheduleAllUsers() - All user schedules have been created successfully!');
   } catch (error) {
-    console.error('Error creating schedules for all users:', error);
+    console.error('scheduleAllUsers() - Error creating schedules for all users:', error);
   }
 }
 
-async function sendMessageToEveryone(message) {
-  const users = await getAllUsers();
-  for (const user of users) {
-    const { chatId } = user;
-    bot.api.sendMessage(chatId, message, {
-      parse_mode: 'HTML', disable_web_page_preview: true
-    });
-  }
-}
+
 
 module.exports = {
   restoreSchedules,
   scheduleMessage,
   cancelSchedule,
   saveSchedules,
-  scheduleAllUsers,
-  sendMessageToEveryone
+  scheduleAllUsers
 }

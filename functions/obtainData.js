@@ -2,14 +2,6 @@ require('dotenv').config({ path: '../.env' });
 const sanitizeHtml = require('sanitize-html')
 const { db, updateData, deleteOutdatedData, getLatestDate } = require('../db/db.js');
 
-
-/* let today = new Date();
-let year = today.getFullYear();
-let month = (today.getMonth() + 1).toString().padStart(2, '0');
-let day = today.getDate().toString().padStart(2, '0'); */
-
-
-
 /* 
     -------
     ФУНКЦИИ ДЛЯ РАБОТЫ С API АЗЬУКИ 
@@ -47,8 +39,6 @@ async function obtainData(year, month, day, apiKey) {
         // CКАЧИВАЕМ ПО СТАРОМУ АПИ РАДИ ССЫЛОК НА БИБЛИЮ
         async function getTextsFromAzbyka() {
             const url = `https://azbyka.ru/days/api/cache_dates?date%5Bexact%5D=${year}-${month}-${day}`;
-            console.log("Request URL:", url);
-            console.log("Authorization Header:", `Bearer ${apiKey}`);
             try {
                 const response = await fetch(url, {
                     headers: {

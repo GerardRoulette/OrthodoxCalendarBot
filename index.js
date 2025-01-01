@@ -119,6 +119,7 @@ bot.on('callback_query:data', async (ctx) => {
   const isGroupChat = ctx.chat.type === 'group' || ctx.chat.type === 'supergroup';
   const adminMessage = isGroupChat ? ' <b>Имейте ввиду, что только администраторы группы могут менять настройки бота</b>' : '';
 
+
   if (timeZoneMap[data]) {
     // выбор таймзоны (если есть в мапе)
     const buttonText = timeZoneMap[data];
@@ -160,7 +161,8 @@ bot.on('callback_query:data', async (ctx) => {
 
   } else if (data === 'choose-preferred-time') {
     // Выбор времени
-    await ctx.callbackQuery.message.editText(`Введите предпочитаемое время в 24-часовом формате ЧЧ:ММ (например, 23:14, 8:12, 19:59).${adminMessage}`, {
+    await ctx.callbackQuery.message.editText(`Введите предпочитаемое время в 24-часовом формате ЧЧ:ММ (например, 23:14, 8:12, 19:59).${adminMessage} 
+${isGroupChat ? '<b><u>Вы должны ОТВЕТИТЬ на это сообщение, чтобы бот его "услышал".</u></b>' : ''}`, {
       parse_mode: "HTML",
       reply_markup: backKeyboard,
     })
@@ -170,7 +172,18 @@ bot.on('callback_query:data', async (ctx) => {
     await ctx.answerCallbackQuery();
     ctx.session.awaitingPreferredTime = true;
 
-  } else {
+  } 
+  else if (data === 'groupchat') {
+    // групповой чат инфо
+    await ctx.callbackQuery.message.editText(`Чтобы использовать бот-календарь в групповом чате, просто добавьте его (<code>@OrthodoxCalendar_Bot</code>) в свою группу.
+После этого отправьте в чат группы команду <code>/start@OrthodoxCalendar_Bot</code> и бот начнет отправлять туда информацию раз в сутки - по умолчанию в 8:30 утра по московскому времени.
+Чтобы изменить предпочитаемый час`, {
+      parse_mode: "HTML",
+      reply_markup: backKeyboard,
+    });
+    await ctx.answerCallbackQuery();
+  }
+  else {
     // на всякий случай
     await ctx.callbackQuery.message.editText('ОШИБКА');
   }
@@ -205,7 +218,7 @@ bot.on('message', async (ctx) => {
         await ctx.reply('Произошла ошибка при обновлении времени. Попробуйте еще раз.');
       }
     } else {
-      // Invalid time format response
+      // если ответ не ЧЧ:ММ
       await ctx.reply('НЕПРАВИЛЬНЫЙ ФОРМАТ ВРЕМЕНИ. Напоминаю, введите предпочитаемое время в 24-часовом формате ЧЧ:ММ (например, 23:14, 08:12, 19:59)', {
         parse_mode: "HTML",
         reply_markup: backKeyboard

@@ -6,7 +6,6 @@ const { bot } = require('../bot.js')
 
 // файл с чат айди
 const chats = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../chats.json'), 'utf8'));
-
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms)); // боюсь заспамить АПИ телеги
 
 

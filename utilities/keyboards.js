@@ -7,7 +7,7 @@ const menuKeyboard = new InlineKeyboard()
     .row()
     .text('Как использовать бот в групповом чате?', 'groupchat')
     .row()
-    .text('Информация о разработчике');
+    .text('Связаться с разработчиком', 'developer');
 
     const menuKeyboardGroup = new InlineKeyboard()
     .text('Установить часовой пояс', 'choose-timezone')
