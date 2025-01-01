@@ -177,7 +177,15 @@ ${isGroupChat ? '<b><u>Вы должны ОТВЕТИТЬ на это сообщ
     // групповой чат инфо
     await ctx.callbackQuery.message.editText(`Чтобы использовать бот-календарь в групповом чате, просто добавьте его (<code>@OrthodoxCalendar_Bot</code>) в свою группу.
 После этого отправьте в чат группы команду <code>/start@OrthodoxCalendar_Bot</code> и бот начнет отправлять туда информацию раз в сутки - по умолчанию в 8:30 утра по московскому времени.
-Чтобы изменить предпочитаемый час`, {
+Чтобы изменить предпочитаемый часовой пояс или время, отправьте <code>/setup@OrthodoxCalendar_Bot</code> в чат группы и следуйте инструкциям.`, {
+      parse_mode: "HTML",
+      reply_markup: backKeyboard,
+    });
+    await ctx.answerCallbackQuery();
+  }
+  else if (data === 'developer') {
+    // о разработчике
+    await ctx.callbackQuery.message.editText(`ЕУЫЕ ЕУЫЕ`, {
       parse_mode: "HTML",
       reply_markup: backKeyboard,
     });
