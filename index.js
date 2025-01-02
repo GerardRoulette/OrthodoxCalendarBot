@@ -261,15 +261,19 @@ bot.on('my_chat_member', async (ctx) => {
   const chatId = ctx.update.my_chat_member.chat.id;
 
   if (newChatMember.status === 'kicked' || newChatMember.status === 'left') {
-    // если юзер заблокировал бота
-    await removeUser(chatId, (err) => {
-      if (err) {
-        console.error('Error deleting user from database:', err);
-      }
-    });
-    cancelSchedule(chatId);
+    console.log(`Bot was removed from group ${chatId}`);
+
+    try {
+      // Ensure cleanup operations are properly awaited
+      await removeUser(chatId);
+      console.log(`User data removed for chat ID: ${chatId}`);
+      cancelSchedule(chatId); // Assuming cancelSchedule does not return a promise
+      console.log(`Schedule canceled for chat ID: ${chatId}`);
+    } catch (err) {
+      console.error('Error during cleanup:', err);
+    }
   }
-}); 
+});
 
 
 bot.start();

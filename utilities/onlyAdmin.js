@@ -1,36 +1,48 @@
-
-
 const onlyAdmin = (errorHandler) => async (ctx, next) => {
   // No chat = no service
   if (!ctx.chat) {
-    return;
+    return next(); // Ensure continuation
   }
 
   // Channels and private chats are only postable by admins
   if (['channel', 'private'].includes(ctx.chat.type)) {
-    return next();
+    return next(); // Ensure continuation
   }
 
   // Anonymous users are always admins
   if (ctx.from?.username === 'GroupAnonymousBot') {
-    return next();
+    return next(); // Ensure continuation
   }
 
   // Surely not an admin
   if (!ctx.from?.id) {
-    return;
+    return next(); // Ensure continuation
   }
 
-  // Check the member status
-  const chatMember = await ctx.getChatMember(ctx.from.id);
-  if (['creator', 'administrator'].includes(chatMember.status)) {
-    return next();
+  try {
+    // Check the member status
+    const chatMember = await ctx.getChatMember(ctx.from.id);
+    if (['creator', 'administrator'].includes(chatMember.status)) {
+      return next(); // Allow continuation if admin
+    }
+  } catch (err) {
+    if (err.message.includes('bot was kicked')) {
+      // Ensure continuation for further handlers
+      return next();
+    } else {
+      console.error('Failed to fetch chat member info:', err);
+      return next(); // Ensure continuation even on other errors
+    }
   }
 
   // Not an admin
   if (errorHandler) {
     return errorHandler(ctx);
+  } else {
+    // Stop further processing if no error handler is provided
+    ctx.reply("Only admins can use this bot.");
   }
 };
+
 
 module.exports = { onlyAdmin };
