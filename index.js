@@ -4,8 +4,8 @@ const schedule = require("node-schedule");
 const { getNewDate } = require('./functions/obtainData.js');
 const { cancelSchedule,
   scheduleMessage,
-  saveSchedules, 
-  restoreSchedules} = require('./functions/sendMessage.js');
+  saveSchedules,
+  restoreSchedules } = require('./functions/sendMessage.js');
 
 const refreshAzbykaToken = require('./utilities/refreshToken');
 
@@ -26,10 +26,10 @@ const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, ti
 // УБРАТЬ КОММЕНТ ПЕРЕД РЕЛИЗОМ
 //schedule.scheduleJob('0 0 0 */29 * *', async () => {
 //    try {
- //       await refreshAzbykaToken();
- //       console.log('API токен обновлен');
- //   } catch (error) {
- //       console.error('ОШИБКА ПРИ ОБНОВЛЕНИИ API ТОКЕНА: ', error.message);
+//       await refreshAzbykaToken();
+//       console.log('API токен обновлен');
+//   } catch (error) {
+//       console.error('ОШИБКА ПРИ ОБНОВЛЕНИИ API ТОКЕНА: ', error.message);
 //   }
 //});
 
@@ -50,32 +50,49 @@ bot.command('start', async (ctx) => {
   // запись в БД
   let userInfo;
   let chatType;
+  let greeting;
   const date = new Date();
   if (ctx.chat.type === 'private') {
     userInfo = `Name: ${ctx.from.first_name || ''} ${ctx.from.last_name || ''} // Username: @${ctx.from.username || 'N/A'} // Lang: ${ctx.from.language_code || 'N/A'}`;
-    chatType = 'PRIVATE'
-  } else {
-    userInfo = `Group Name: ${ctx.chat.title} // Admin @${ctx.from.username} // Group ID: ${ctx.chat.id}`;
-    chatType = 'GROUP'
-  }
-  addUser(ctx.chat.id, userInfo, chatType);
-  await ctx.reply( // приветственное сообщение
-    `Мир Вам!
+    chatType = 'PRIVATE';
+    greeting = `Мир Вам!
 Этот бот ежедневно будет отправлять Вам информацию о сегодняшнем дне в календаре Русской Православной Церкви.
-
-В настоящее время бот отправляет календарную информацию в 8-30 утра по московскому времени.
-В дальнейшем будут добавлены:
-- возможность установить свой часовой пояс
-- возможность установить свое желаемое время для получения календаря
-- возможность использования в групповых чатах
-
+    
+<b><u>Теперь этот бот будет отправлять вам календарную информацию в 8-30 утра по московскому времени.</u></b>
+Если вы хотите изменить время или часовой пояс - отправьте в чат команду /setup и следуйте инструкциям.
+Если вы хотите получить календарную информацию прямо сейчас - отправьте в чат команду /sendnow
+    
+Бота можно использовать в групповых чатах. Инструкции можно посмотреть в меню по команде /setup
+    
 <b>ПРОШУ ИМЕТЬ ВВИДУ СЛЕДУЮЩЕЕ
 В НАСТОЯЩЕЕ ВРЕМЯ БОТ НАХОДИТСЯ В РАЗРАБОТКЕ. ВОЗМОЖНЫ ОШИБКИ И СБОИ.
 БОТ ЕЩЕ НЕ АДАПТИРОВАН К БОЛЬШИМ НАГРУЗКАМ, ПРОСЬБА НЕ РАСПРОСТРАНЯТЬ
 </b>
 (я скажу когда будет можно)
+    
+По всем вопросам и предложениям просьба связываться с @kvasov1`
+  } else {
+    userInfo = `Group Name: ${ctx.chat.title} // Admin @${ctx.from.username} // Group ID: ${ctx.chat.id}`;
+    chatType = 'GROUP';
+    greeting = `Мир Вам!
+Этот бот ежедневно будет отправлять Вам информацию о сегодняшнем дне в календаре Русской Православной Церкви.
+    
+<b><u>Теперь этот бот будет отпраавлять вам календарную информацию в 8-30 утра по московскому времени.</u></b>
+Если вы хотите изменить время или часовой пояс - отправьте в чат команду /setup@OrthodoxCalendar_Bot и следуйте инструкциям (настройки доступны только администраторам)
+Если вы хотите получить календарную информацию прямо сейчас - отправьте в чат команду /sendnow@OrthodoxCalendar_Bot (только администраторы)
+    
+<b>ПРОШУ ИМЕТЬ ВВИДУ СЛЕДУЮЩЕЕ
+В НАСТОЯЩЕЕ ВРЕМЯ БОТ НАХОДИТСЯ В РАЗРАБОТКЕ. ВОЗМОЖНЫ ОШИБКИ И СБОИ.
+БОТ ЕЩЕ НЕ АДАПТИРОВАН К БОЛЬШИМ НАГРУЗКАМ, ПРОСЬБА НЕ РАСПРОСТРАНЯТЬ
+</b>
+(я скажу когда будет можно)
+    
+По всем вопросам и предложениям просьба связываться с @kvasov1`
+  }
 
-По всем вопросам и предложениям просьба связываться с @kvasov1`, {
+  addUser(ctx.chat.id, userInfo, chatType);
+  await ctx.reply( // приветственное сообщение
+    greeting, {
     parse_mode: "HTML",
     disable_web_page_preview: true
   }
@@ -90,6 +107,34 @@ bot.command('start', async (ctx) => {
   saveSchedules();
 });
 
+bot.command('sendnow', async (ctx) => {
+  try {
+    const chatId = ctx.chat.id;
+    // берем таймзону из БД
+    const userSettings = await getUserSettings(chatId, ['timezone']);
+    if (!userSettings) {
+      return ctx.reply("ОШИБКА");
+    }
+
+    const timezone = userSettings.timezone || 3; // если по какой то причине нет таймзоны то Москва
+
+    const userDate = new Date(new Date().getTime() + timezone * 60 * 60 * 1000);
+    const formattedDate = userDate.toISOString().split('T')[0]; // текущая дата в таймзоне юзера
+
+    // забираем нужное сообщение из БД
+    const message = await getMessageByDate(formattedDate);
+    if (!message) {
+      return ctx.reply("ОШИБКА");
+    }
+    await ctx.reply(message, {
+      parse_mode: "HTML",
+      disable_web_page_preview: true
+    });
+  } catch (error) {
+    console.error('Error in /sendnow command:', error);
+    ctx.reply('ОШИБКА');
+  }
+});
 
 
 /* 
@@ -110,7 +155,7 @@ bot.command('setup', async (ctx) => {
     });
   }
 });
-  
+
 
 // ОБРАБОТКА ИНЛАЙН КЛАВИАТУР
 bot.on('callback_query:data', async (ctx) => {
@@ -118,7 +163,6 @@ bot.on('callback_query:data', async (ctx) => {
   // в случае если групповой чат а не личка, добавляем сообщение к интерфейсу.
   const isGroupChat = ctx.chat.type === 'group' || ctx.chat.type === 'supergroup';
   const adminMessage = isGroupChat ? ' <b>Имейте ввиду, что только администраторы группы могут менять настройки бота</b>' : '';
-
 
   if (timeZoneMap[data]) {
     // выбор таймзоны (если есть в мапе)
@@ -161,8 +205,9 @@ bot.on('callback_query:data', async (ctx) => {
 
   } else if (data === 'choose-preferred-time') {
     // Выбор времени
-    await ctx.callbackQuery.message.editText(`Введите предпочитаемое время в 24-часовом формате ЧЧ:ММ (например, 23:14, 8:12, 19:59).${adminMessage} 
-${isGroupChat ? '<b><u>Вы должны ОТВЕТИТЬ на это сообщение, чтобы бот его "услышал".</u></b>' : ''}`, {
+    await ctx.callbackQuery.message.editText(`${isGroupChat ? '<b><u>Вы должны ОТВЕТИТЬ на это сообщение, чтобы бот его "услышал".</u></b>' : ''}
+Введите предпочитаемое время в 24-часовом формате ЧЧ:ММ (например, 23:14, 8:12, 19:59).${adminMessage} 
+`, {
       parse_mode: "HTML",
       reply_markup: backKeyboard,
     })
@@ -171,8 +216,7 @@ ${isGroupChat ? '<b><u>Вы должны ОТВЕТИТЬ на это сообщ
     await ctx.api.editMessageText;
     await ctx.answerCallbackQuery();
     ctx.session.awaitingPreferredTime = true;
-
-  } 
+  }
   else if (data === 'groupchat') {
     // групповой чат инфо
     await ctx.callbackQuery.message.editText(process.env.GROUP_CHAT, {
@@ -194,7 +238,6 @@ ${isGroupChat ? '<b><u>Вы должны ОТВЕТИТЬ на это сообщ
     // на всякий случай
     await ctx.callbackQuery.message.editText('ОШИБКА');
   }
-
   await ctx.answerCallbackQuery();
 });
 
@@ -246,9 +289,10 @@ bot.callbackQuery('mainmenu', async (ctx) => {
 
 
 bot.api.setMyCommands([
-  { command: 'start', description: 'Запуск бота' },
-  { command: 'setup', description: 'Настройки' },
+  { command: 'setup', description: 'Настройки бота' },
+  { command: 'sendnow', description: 'Отправить информацию сейчас' },
 ]);
+
 
 schedule.scheduleJob("1 0 * * * *", () => {
   getNewDate();
@@ -266,9 +310,7 @@ bot.on('my_chat_member', async (ctx) => {
     try {
       // Ensure cleanup operations are properly awaited
       await removeUser(chatId);
-      console.log(`User data removed for chat ID: ${chatId}`);
       cancelSchedule(chatId); // Assuming cancelSchedule does not return a promise
-      console.log(`Schedule canceled for chat ID: ${chatId}`);
     } catch (err) {
       console.error('Error during cleanup:', err);
     }

@@ -56,7 +56,6 @@ async function obtainData(year, month, day, apiKey) {
                 setTimeout(() => getTextsFromAzbyka(), 3000000);
             }
         }
-
         // фильтруем большой json и достаем id текста с id 1 (где содержатся сегодняшние чтения)
         // Азбука тут не дает сам текст, а дает цифру 123123, мы дальше делаем запрос по этой цифре и получаем сам текст
         function getTextIdsWithType1(data) {
@@ -64,7 +63,6 @@ async function obtainData(year, month, day, apiKey) {
                 item.abstractDate.texts.filter(text => text.type === 1).map(text => text.id)
             );
         }
-
         // сама цепочка извлечения текста по запросу по айди
         async function getTodayBibleReading() {
             let jsonWithTextIds = await getTextsFromAzbyka(); // вытащили большой JSON со всеми айди сегодняшними
@@ -88,7 +86,6 @@ async function obtainData(year, month, day, apiKey) {
                 setTimeout(() => getTodayBibleReading(), 3000000);
             }
         }
-
         // cобственно экшен, собираем данные предыдущими функциями, делаем из них непосредственно сообщение
         // sanitizeHtml убирает теги которые запрещает Телеграм
         try {
@@ -132,16 +129,16 @@ async function obtainData(year, month, day, apiKey) {
                 }
             });
 
-            const message = `Доброе утро!
+            const message = `Благословенного дня!
 
 Сегодня Русская Православная Церковь празднует:
                 
 ${arrayOfSaints.join('\n')}
                 
 На богослужениях в храме будут читаться:
-${texts}
+<i>${texts}</i>
                 
-Все тексты в одном месте можно прочесть <a href="https://azbyka.ru/biblia/days/${year}-${month}-${day}">по этой ссылке.</a>`
+Все тексты в одном месте можно прочесть <b><u><a href="https://azbyka.ru/biblia/days/${year}-${month}-${day}">по этой ссылке.</a></u></b>`
 
             return message;
         } catch (error) {

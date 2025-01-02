@@ -1,3 +1,15 @@
+/*
+------------
+
+Источник - https://github.com/backmeupplz/grammy-middlewares
+При установке пакетом вылетали 403 ошибки в сценарии "бота удалили из группы" из-за того что бот пытался использовать getChatMember уже после кика
+Как следствие, не исполнялись removeUser и deleteSchedule
+Обернул в try...catch, стало работать
+Но остальные 99% авторства - выше
+
+------------
+*/
+
 const onlyAdmin = (errorHandler) => async (ctx, next) => {
   // No chat = no service
   if (!ctx.chat) {
@@ -38,10 +50,10 @@ const onlyAdmin = (errorHandler) => async (ctx, next) => {
   // Not an admin
   if (errorHandler) {
     return errorHandler(ctx);
-  } else {
+  } /* else {
     // Stop further processing if no error handler is provided
     ctx.reply("Only admins can use this bot.");
-  }
+  } */
 };
 
 
