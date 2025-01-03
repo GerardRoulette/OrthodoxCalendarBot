@@ -305,14 +305,11 @@ bot.on('my_chat_member', async (ctx) => {
   const chatId = ctx.update.my_chat_member.chat.id;
 
   if (newChatMember.status === 'kicked' || newChatMember.status === 'left') {
-    console.log(`Bot was removed from group ${chatId}`);
-
     try {
-      // Ensure cleanup operations are properly awaited
       await removeUser(chatId);
-      cancelSchedule(chatId); // Assuming cancelSchedule does not return a promise
+      cancelSchedule(chatId);
     } catch (err) {
-      console.error('Error during cleanup:', err);
+      console.error('Error during deleting:', err);
     }
   }
 });
