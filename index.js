@@ -16,8 +16,9 @@ const { addUser,
   getMessageByDate,
   getUserSettings } = require('./db/db.js');
 
-const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap, menuKeyboardGroup } = require('./utilities/keyboards.js') // DOUBLE CHECK
+const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap, menuKeyboardGroup } = require('./utilities/keyboards.js') 
 
+let apiKey = process.env.AZBYKA_API_KEY
 /* 
 ЗАПРОС ДАННЫХ С АЗБУКИ
 */
@@ -35,9 +36,9 @@ const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, ti
 
 restoreSchedules();
 
-// СКАЧИВАЕМ ДАННЫЕ в 0-00-01 ("1 0 0 * * *"), запись в файл 
-schedule.scheduleJob("1 0 0 * * *", () => {
-  getNewDate();
+// СКАЧИВАЕМ ДАННЫЕ в 0-00-05 ("5 0 0 * * *"), запись в файл 
+ schedule.scheduleJob("5 0 0 * * *", () => {
+ getNewDate();
 });
 
 
@@ -74,7 +75,7 @@ bot.command('start', async (ctx) => {
   } else {
     userInfo = `Group Name: ${ctx.chat.title} // Admin @${ctx.from.username} // Group ID: ${ctx.chat.id}`;
     chatType = 'GROUP';
-    greeting = `Мир Вам!
+    greeting = `Здравствуйте!
 Этот бот ежедневно будет отправлять Вам информацию о сегодняшнем дне в календаре Русской Православной Церкви.
     
 <b><u>Теперь этот бот будет отпраавлять вам календарную информацию в 8-30 утра по московскому времени.</u></b>
@@ -97,7 +98,7 @@ bot.command('start', async (ctx) => {
     disable_web_page_preview: true
   }
   );
-  await ctx.reply( // приветственное сообщение
+  await ctx.reply( // сегодняшнее сообщение
     await getMessageByDate(date.toISOString().split('T')[0]), {
     parse_mode: "HTML",
     disable_web_page_preview: true
@@ -294,9 +295,6 @@ bot.api.setMyCommands([
 ]);
 
 
-schedule.scheduleJob("1 0 * * * *", () => {
-  getNewDate();
-});
 
 // УДАЛЕНИЕ ЮЗЕРА ЕСЛИ ЗАБЛОКИРОВАЛ БОТА
 

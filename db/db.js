@@ -8,7 +8,7 @@ db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     chatId INTEGER PRIMARY KEY,
     timezone REAL DEFAULT '3',
-    preferredTime TEXT DEFAULT '08:30',
+    preferredTime TEXT DEFAULT '8:30',
     userInfo TEXT,
     chatType TEXT
   )`);

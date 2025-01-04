@@ -50,9 +50,6 @@ function scheduleMessage(chatId, timezone, preferredTime) {
   const carryOverHour = adjustedMinute < 0 ? -1 : 0; // если добавленные минуты добавляют час)
   const finalHour = (adjustedHour + carryOverHour + 24) % 24; // та же логика что выше
 
-
-
-  
   const cronExpression = `${finalMinute} ${finalHour} * * *`;
 
   // отмена существующего расписания если оно есть в мапе (если нет ничего не случится, ошибки не будет)
@@ -60,11 +57,10 @@ function scheduleMessage(chatId, timezone, preferredTime) {
 
   const job = schedule.scheduleJob(cronExpression, async () => {
     // тут идея в том чтобы юзер получал календарь именно той даты которая ему нужна
-    const userDate = new Date(
-      new Date().toLocaleDateString('en-CA', {
-        timeZone: `Etc/GMT${timezone > 0 ? '-' : '+'}${Math.abs(timezone)}`,
-      }))
-    const message = await getMessageByDate(userDate.toISOString().split('T')[0]);
+    const nowUTC = new Date(Date.now() - 3 * 60 * 60 * 1000); // Convert server time (UTC+3) to UTC
+    const userTime = new Date(nowUTC.getTime() + timezone * 60 * 60 * 1000);
+    const userDate = userTime.toISOString().split('T')[0]; // Extract YYYY-MM-DD format
+    const message = await getMessageByDate(userDate);
 
     if (message) {
       bot.api.sendMessage(chatId, message, {
@@ -81,10 +77,9 @@ function scheduleMessage(chatId, timezone, preferredTime) {
 
 
 // пересоздание всех расписаний из JSON
-async function restoreSchedules() {
+async function restoreSchedules() { 
   if (fs.existsSync(scheduleFile)) {
     const schedules = JSON.parse(fs.readFileSync(scheduleFile, 'utf-8'));
-
     for (const { chatId } of schedules) {
       const user = await getUserSettings(chatId); 
       if (user) {
@@ -93,7 +88,7 @@ async function restoreSchedules() {
     }
   }
 }
-
+// пересоздание всех расписаний из БД
 async function scheduleAllUsers() {
   try {
     const users = await getAllUsers();

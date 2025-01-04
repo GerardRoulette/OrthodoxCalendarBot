@@ -129,7 +129,7 @@ async function obtainData(year, month, day, apiKey) {
                 }
             });
 
-            const message = `Благословенного дня!
+            const message = `Мир вам!
 
 Сегодня Русская Православная Церковь празднует:
                 
@@ -158,14 +158,11 @@ ${arrayOfSaints.join('\n')}
 */
 
 // СКАЧАТЬ НОВУЮ ДАТУ 
-async function getNewDate() {
+async function getNewDate(apiKey) {
     const currentDate = new Date();
-    // 
-    getLatestDate((err, latestDate) => {
-        if (err) {
-            console.error('Error fetching latest date:', err);
-            return;
-        }
+
+    try {
+        const latestDate = await getLatestDate();
 
         // вычисляем новую дату
         const newDate = new Date(currentDate);
@@ -173,21 +170,24 @@ async function getNewDate() {
         const newDateString = newDate.toISOString().split('T')[0];
         // если ее нет в базе, то скачаем
         if (!latestDate || newDateString > latestDate) {
-            // качаем новую дату
             const year = newDate.getFullYear();
             const month = newDate.getMonth() + 1;
             const day = newDate.getDate();
-            obtainData(year, month, day, apiKey).then(message => {
-                updateData(newDateString, message);
-                // удаляем устаревшую дату
-                const twoDaysAgo = new Date(currentDate);
-                twoDaysAgo.setDate(currentDate.getDate() - 2);
-                deleteOutdatedData(twoDaysAgo.toISOString().split('T')[0]);
-            }).catch(err => {
-                console.error('Error obtaining data:', err);
-            });
+
+            const message = await obtainData(year, month, day, apiKey);
+            await updateData(newDateString, message);
+
+            // удаляем устаревшую дату
+            const twoDaysAgo = new Date(currentDate);
+            twoDaysAgo.setDate(currentDate.getDate() - 2);
+            const twoDaysAgoString = twoDaysAgo.toISOString().split('T')[0];
+            await deleteOutdatedData(twoDaysAgoString);
+
+            console.log(`Новая дата ${newDateString} скачана, старая дата ${twoDaysAgoString} удалена`);
         }
-    });
+    } catch (err) {
+        console.error('Error:', err);
+    }
 }
 
 
