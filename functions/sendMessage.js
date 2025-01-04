@@ -32,13 +32,28 @@ function saveSchedules() {
 // базовое, создаем расписание 
 function scheduleMessage(chatId, timezone, preferredTime) {
   const [hour, minute] = preferredTime.split(':').map(Number);
-  const localHour = (hour - timezone + 3 + 24) % 24;
+
+  // я плохо дружу с математикой, так что заметки для себя чтобы не забыть что для чего нужно
+  const integerTimezone = Math.floor(timezone); // целое число в случае если таймзона типа 4.5
+  const fractionalTimezone = timezone - integerTimezone; // остаток если он есть, иначе 0
+
+  const adjustedMinute = minute - (fractionalTimezone * 60); // вычитаем условный 0.5 в виде 30 минут от минут пользователя
+  
+  const adjustedHour = (hour - integerTimezone + 3 + 24) % 24; 
   // 3 - таймзона сервера. +24 чтобы число точно было положительное. % 24 чтобы убрать лишние часы
   // 2:00 - 5 (utc+5) + 3 
   // то есть 2 часа локал времени юзера - 5 таймзоны + 3 сервера = 0
   // т.е. 2 часа в UTC+5 будут полночью по времени сервера
   // +24 % 24 в случае если негативное число получилось 
-  const cronExpression = `${minute} ${localHour} * * *`;
+
+  const finalMinute = (adjustedMinute + 60) % 60; // +60 % 60 в случае если adjustedMinute негативное число
+  const carryOverHour = adjustedMinute < 0 ? -1 : 0; // если добавленные минуты добавляют час)
+  const finalHour = (adjustedHour + carryOverHour + 24) % 24; // та же логика что выше
+
+
+
+  
+  const cronExpression = `${finalMinute} ${finalHour} * * *`;
 
   // отмена существующего расписания если оно есть в мапе (если нет ничего не случится, ошибки не будет)
   cancelSchedule(chatId);
