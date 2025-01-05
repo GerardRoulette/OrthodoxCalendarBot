@@ -79,6 +79,21 @@ async function countUsers() {
   });
 }
 
+/* async function countUsers() {
+  return new Promise((resolve, reject) => {
+    db.get(
+      `SELECT 
+        SUM(CASE WHEN chatType = 'PRIVATE' THEN 1 ELSE 0 END) AS privateCount,
+        SUM(CASE WHEN chatType = 'GROUP' THEN 1 ELSE 0 END) AS groupCount
+       FROM users`,
+      (err, row) => {
+        if (err) reject(err);
+        else resolve({ privateCount: row.privateCount, groupCount: row.groupCount });
+      }
+    );
+  });
+} */
+
 // добавляем сообщения дня в БД
 async function updateData(date, message) {
   return new Promise((resolve, reject) => {
