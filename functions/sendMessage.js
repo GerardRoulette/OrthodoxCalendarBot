@@ -10,7 +10,11 @@ const scheduleMap = new Map();
 const rootFolder = path.resolve(__dirname, '../');
 const scheduleFile = path.join(rootFolder, 'schedule.json');
 
-// Отмена одного конкретного расписания по чат айди
+/* 
+---------
+Отмена одного конкретного расписания по чат айди
+---------
+*/
 function cancelSchedule(chatId) {
   const scheduleEntry = scheduleMap.get(chatId);
   if (scheduleEntry && scheduleEntry.job) {
@@ -20,7 +24,11 @@ function cancelSchedule(chatId) {
   }
 }
 
-// запись Мапа с расписаниями в JSON
+/* 
+---------
+Запись мапа с расписаниями в schedule.json
+---------
+*/
 function saveSchedules() {
   const schedules = Array.from(scheduleMap.entries()).map(([chatId, job]) => ({
     chatId,
@@ -29,7 +37,11 @@ function saveSchedules() {
   fs.writeFileSync(scheduleFile, JSON.stringify(schedules, null, 2));
 }
 
-// базовое, создаем расписание 
+/* 
+---------
+Базовое создание расписания
+---------
+*/
 function scheduleMessage(chatId, timezone, preferredTime) {
   const [hour, minute] = preferredTime.split(':').map(Number);
 
@@ -76,7 +88,11 @@ function scheduleMessage(chatId, timezone, preferredTime) {
 }
 
 
-// пересоздание всех расписаний из JSON
+/* 
+---------
+Пересоздание всех расписаний из JSON
+---------
+*/
 async function restoreSchedules() { 
   if (fs.existsSync(scheduleFile)) {
     const schedules = JSON.parse(fs.readFileSync(scheduleFile, 'utf-8'));
@@ -88,7 +104,12 @@ async function restoreSchedules() {
     }
   }
 }
-// пересоздание всех расписаний из БД
+
+/* 
+---------
+Пересоздание всех расписаний из БД
+---------
+*/
 async function scheduleAllUsers() {
   try {
     const users = await getAllUsers();
@@ -103,6 +124,20 @@ async function scheduleAllUsers() {
   }
 }
 
+async function sendMessageToEveryone(message) {
+  const users = await getAllUsers();
+    for (const user of users) {
+      try {
+          await bot.api.sendMessage(user.chatId, message, {
+            parse_mode: 'HTML', 
+            disable_web_page_preview: true
+          });
+      } catch (err) {
+          console.error(`Failed to send message to user: ${user.chatId}`, err);
+      }
+  }
+  }
+
 
 
 module.exports = {
@@ -110,5 +145,6 @@ module.exports = {
   scheduleMessage,
   cancelSchedule,
   saveSchedules,
-  scheduleAllUsers
+  scheduleAllUsers,
+  sendMessageToEveryone
 }

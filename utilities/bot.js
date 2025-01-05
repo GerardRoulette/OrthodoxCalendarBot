@@ -7,15 +7,15 @@ const { Bot, InlineKeyboard, GrammyError, session } = require('grammy');
 const { autoRetry } = require('@grammyjs/auto-retry');
 const { hydrate } = require('@grammyjs/hydrate');
 
-const botApi = process.env.BOT_API_KEY
-const bot = new Bot(botApi); 
+const bot = new Bot(process.env.BOT_API_KEY); 
 
-bot.api.config.use(autoRetry());
+bot.api.config.use(autoRetry()); // обход ошибок во время бродкастов изза слишком большого количества сообщений в секунду
 
-bot.use(hydrate());
+bot.use(hydrate()); // редактирование сообщений 
 
 bot.use(
- onlyAdmin(),
+ onlyAdmin(), // в групповых чатах дает применят команды только админам
+ // чуть чуть подпиленное решение от https://github.com/backmeupplz/grammy-middlewares
 );
 
 

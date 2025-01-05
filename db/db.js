@@ -72,15 +72,6 @@ async function updatePreferredTime(chatId, preferredTime) {
 // считаем юзеров
 async function countUsers() {
   return new Promise((resolve, reject) => {
-    db.get("SELECT COUNT(*) AS count FROM users", (err, row) => {
-      if (err) reject(err);
-      else resolve(row.count);
-    });
-  });
-}
-
-/* async function countUsers() {
-  return new Promise((resolve, reject) => {
     db.get(
       `SELECT 
         SUM(CASE WHEN chatType = 'PRIVATE' THEN 1 ELSE 0 END) AS privateCount,
@@ -92,7 +83,7 @@ async function countUsers() {
       }
     );
   });
-} */
+} 
 
 // добавляем сообщения дня в БД
 async function updateData(date, message) {

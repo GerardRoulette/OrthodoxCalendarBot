@@ -1,17 +1,16 @@
 require('dotenv').config({ path: '../.env' });
 const sanitizeHtml = require('sanitize-html')
-const { db, updateData, deleteOutdatedData, getLatestDate } = require('../db/db.js');
+const { updateData, deleteOutdatedData, getLatestDate } = require('../db/db.js');
 
 /* 
     -------
-    ФУНКЦИИ ДЛЯ РАБОТЫ С API АЗЬУКИ 
+    ФУНКЦИИ ДЛЯ РАБОТЫ С API АЗБУКИ 
     ФОРМИРОВАНИЕ ИЗ ДАННЫХ СООБЩЕНИЯ, КОТОРОЕ ПОЛУЧИТ ЮЗЕР
     -------
 */
 
 async function obtainData(year, month, day, apiKey) {
-
-    //добавляем нули для корректного запроса по апи
+    //добавляем нули для корректного запроса 
     month = month.toString().padStart(2, '0');
     day = day.toString().padStart(2, '0');
 
@@ -153,17 +152,16 @@ ${arrayOfSaints.join('\n')}
 
 /* 
     -------
-    СКАЧИВАНИЕ И ЗАПИСЬ В БАЗУ ДАННЫХ
+    СКАЧИВАНИЕ И ОБНОВЛЕНИЕ ДАННЫХ В ТЕЧЕНИЕ ВРЕМЕНИ
     -------
 */
 
-// СКАЧАТЬ НОВУЮ ДАТУ 
+
 async function getNewDate(apiKey) {
     const currentDate = new Date();
 
     try {
         const latestDate = await getLatestDate();
-
         // вычисляем новую дату
         const newDate = new Date(currentDate);
         newDate.setDate(currentDate.getDate() + 7);

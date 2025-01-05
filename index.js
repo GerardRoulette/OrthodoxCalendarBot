@@ -18,9 +18,8 @@ const { addUser,
 
 const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap, menuKeyboardGroup } = require('./utilities/keyboards.js') 
 
-let apiKey = process.env.AZBYKA_API_KEY
 /* 
-ЗАПРОС ДАННЫХ С АЗБУКИ
+ЗАПРОС ДАННЫХ С АЗБУКИ 
 */
 
 // ОБНОВЛЕНИЕ ТОКЕНА КАЖДЫЕ 29 ДНЕЙ
@@ -34,6 +33,7 @@ let apiKey = process.env.AZBYKA_API_KEY
 //   }
 //});
 
+// восстанавливаем расписания из schedule.json
 restoreSchedules();
 
 // СКАЧИВАЕМ ДАННЫЕ в 0-00-05 ("5 0 0 * * *"), запись в файл 
@@ -43,10 +43,12 @@ restoreSchedules();
 
 
 /* 
-РАБОТА С ЧАТАМИ 
+----------
+КОМАНДЫ В ЧАТЕ
+----------
 */
 
-
+// /START при первом запуске
 bot.command('start', async (ctx) => {
   // запись в БД
   let userInfo;
@@ -90,8 +92,6 @@ bot.command('start', async (ctx) => {
     
 По всем вопросам и предложениям просьба связываться с @kvasov1`
   }
-
-  addUser(ctx.chat.id, userInfo, chatType);
   await ctx.reply( // приветственное сообщение
     greeting, {
     parse_mode: "HTML",
@@ -104,10 +104,12 @@ bot.command('start', async (ctx) => {
     disable_web_page_preview: true
   }
   );
-  scheduleMessage(ctx.chat.id, '3', '8:30')
+  await addUser(ctx.chat.id, userInfo, chatType);
+  scheduleMessage(ctx.chat.id, '3', '8:30') 
   saveSchedules();
 });
 
+// /SENDNOW команда
 bot.command('sendnow', async (ctx) => {
   try {
     const chatId = ctx.chat.id;
@@ -137,12 +139,7 @@ bot.command('sendnow', async (ctx) => {
   }
 });
 
-
-/* 
---- МЕНЮ ---
-*/
-
-// ГЛАВНОЕ МЕНЮ 
+// /SETUP команда 
 bot.command('setup', async (ctx) => {
   if (ctx.chat.type === 'private') {
     await ctx.reply('Выберите пункт меню', {
@@ -158,7 +155,11 @@ bot.command('setup', async (ctx) => {
 });
 
 
-// ОБРАБОТКА ИНЛАЙН КЛАВИАТУР
+/*
+--------------------
+ОБРАБОТКА ИНЛАЙН КЛАВИАТУР
+--------------------
+*/
 bot.on('callback_query:data', async (ctx) => {
   const data = ctx.callbackQuery.data;
   // в случае если групповой чат а не личка, добавляем сообщение к интерфейсу.
@@ -203,7 +204,6 @@ bot.on('callback_query:data', async (ctx) => {
     });
     await ctx.api.editMessageText;
     await ctx.answerCallbackQuery();
-
   } else if (data === 'choose-preferred-time') {
     // Выбор времени
     await ctx.callbackQuery.message.editText(`${isGroupChat ? '<b><u>Вы должны ОТВЕТИТЬ на это сообщение, чтобы бот его "услышал".</u></b>' : ''}
@@ -213,7 +213,6 @@ bot.on('callback_query:data', async (ctx) => {
       reply_markup: backKeyboard,
     })
     ctx.session.awaitingPreferredTime = false;
-
     await ctx.api.editMessageText;
     await ctx.answerCallbackQuery();
     ctx.session.awaitingPreferredTime = true;
@@ -278,7 +277,6 @@ bot.on('message', async (ctx) => {
   }
 });
 
-
 bot.callbackQuery('mainmenu', async (ctx) => {
   await ctx.callbackQuery.message.editText('Выберите пункт меню', {
     parse_mode: "HTML",
@@ -287,8 +285,13 @@ bot.callbackQuery('mainmenu', async (ctx) => {
   await ctx.answerCallbackQuery();
 });
 
+/* 
+--------
+СЛУЖЕБНОЕ
+--------
+*/
 
-
+// список команд видных юзеру
 bot.api.setMyCommands([
   { command: 'setup', description: 'Настройки бота' },
   { command: 'sendnow', description: 'Отправить информацию сейчас' },
