@@ -23,15 +23,15 @@ const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, ti
 */
 
 // ОБНОВЛЕНИЕ ТОКЕНА КАЖДЫЕ 29 ДНЕЙ
-// УБРАТЬ КОММЕНТ ПЕРЕД РЕЛИЗОМ
-//schedule.scheduleJob('0 0 0 */29 * *', async () => {
-//    try {
-//       await refreshAzbykaToken();
-//       console.log('API токен обновлен');
-//   } catch (error) {
-//       console.error('ОШИБКА ПРИ ОБНОВЛЕНИИ API ТОКЕНА: ', error.message);
-//   }
-//});
+
+schedule.scheduleJob('0 0 0 */29 * *', async () => {
+   try {
+      await refreshAzbykaToken();
+      console.log('API токен обновлен');
+  } catch (error) {
+           console.error('ОШИБКА ПРИ ОБНОВЛЕНИИ API ТОКЕНА: ', error.message);
+  }
+});
 
 // восстанавливаем расписания из schedule.json
 restoreSchedules();
