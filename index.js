@@ -18,24 +18,25 @@ const { addUser,
 
 const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap, menuKeyboardGroup } = require('./utilities/keyboards.js') 
 
+const errorTrackerChat = process.env.ERROR_TRACKER
 /* 
 ЗАПРОС ДАННЫХ С АЗБУКИ 
 */
 
-// ОБНОВЛЕНИЕ ТОКЕНА КАЖДЫЕ 29 ДНЕЙ
-
-schedule.scheduleJob('0 0 0 */29 * *', async () => {
+// ОБНОВЛЕНИЕ ТОКЕНА КАЖДЫЕ 28 ДНЕЙ
+refreshAzbykaToken();
+schedule.scheduleJob('0 0 0 */28 * *', async () => {
    try {
       await refreshAzbykaToken();
       console.log('API токен обновлен');
   } catch (error) {
+            await bot.api.sendMessage(errorTrackerChat, `ОШИБКА ПРИ ОБНОВЛЕНИИ АПИ ТОКЕНА АЗБУКИ: ${error.message}`);
            console.error('ОШИБКА ПРИ ОБНОВЛЕНИИ API ТОКЕНА: ', error.message);
   }
 });
 
 // восстанавливаем расписания из schedule.json
 restoreSchedules();
-
 // СКАЧИВАЕМ ДАННЫЕ в 0-00-05 ("5 0 0 * * *"), запись в файл 
  schedule.scheduleJob("5 0 0 * * *", () => {
  getNewDate();

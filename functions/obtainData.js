@@ -1,7 +1,9 @@
 require('dotenv').config({ path: '../.env' });
 const sanitizeHtml = require('sanitize-html')
 const { updateData, deleteOutdatedData, getLatestDate } = require('../db/db.js');
+const { bot } = require('../utilities/bot.js')
 
+const errorTrackerChat = process.env.ERROR_TRACKER
 /* 
     -------
     ФУНКЦИИ ДЛЯ РАБОТЫ С API АЗБУКИ 
@@ -25,12 +27,15 @@ async function obtainData(year, month, day, apiKey) {
                     }
                 });
                 if (!response.ok) {
+                    await bot.api.sendMessage(errorTrackerChat, `getSaintsFromAzbyka() - Response status ${year}-${month}-${day}: ${response.status} --- ${await response.text()}`);
                     throw new Error(`API DAY - Response status: ${response.status} --- ${await response.text()}`);
+                    
                 }
                 const json = await response.json();
                 return JSON.stringify(json, null, 2);
             } catch (error) {
                 console.error('Error:', error.message);
+                await bot.api.sendMessage(errorTrackerChat, `getSaintsFromAzbyka() - ОШИБКА: ${error.message}`);
                 setTimeout(() => getSaintsFromAzbyka(), 3000000);
             }
         }
@@ -45,12 +50,14 @@ async function obtainData(year, month, day, apiKey) {
                     }
                 });
                 if (!response.ok) {
+                    await bot.api.sendMessage(errorTrackerChat, `getTextsFromAzbyka() - Response status ${year}-${month}-${day}: ${response.status} --- ${await response.text()}`);
                     throw new Error(`CACHE DATE - Response status: ${response.status} --- ${await response.text()}`);
                 }
 
                 const json = await response.json();
                 return await json; // просто возвращаем json, чтобы его распилить и достать текст с id 1
             } catch (error) {
+                await bot.api.sendMessage(errorTrackerChat, `getTextsFromAzbyka() - ОШИБКА: ${error.message}`);
                 console.error(error.message);
                 setTimeout(() => getTextsFromAzbyka(), 3000000);
             }
@@ -66,7 +73,9 @@ async function obtainData(year, month, day, apiKey) {
         async function getTodayBibleReading() {
             let jsonWithTextIds = await getTextsFromAzbyka(); // вытащили большой JSON со всеми айди сегодняшними
             let todayBibleId = getTextIdsWithType1(jsonWithTextIds); // вытащили сам айди текста нужного
+            console.log(todayBibleId + ' todayBibleId');
             const url = `https://azbyka.ru/days/api/texts/${todayBibleId.join()}`; // array превратили в string
+            console.log(url + ' url')
             try {
                 const response = await fetch(url, {
                     headers: {
@@ -74,6 +83,7 @@ async function obtainData(year, month, day, apiKey) {
                     }
                 });
                 if (!response.ok) {
+                    await bot.api.sendMessage(errorTrackerChat, `getTodayBibleReading() - Response status bible Id --- ${todayBibleId.join()} --- : ${response.status} --- ${await response.text()}`);
                     throw new Error(`TEXTS - Response status: ${response.status} --- ${await response.text()}`);
                 }
 
@@ -81,6 +91,7 @@ async function obtainData(year, month, day, apiKey) {
                 return JSON.stringify(json, null, 2)
 
             } catch (error) {
+                await bot.api.sendMessage(errorTrackerChat, `getTodayBibleReading() - ОШИБКА: ${error.message}`);
                 console.error(error.message);
                 setTimeout(() => getTodayBibleReading(), 3000000);
             }
@@ -147,6 +158,7 @@ ${arrayOfSaints.join('\n')}
 
     } catch (error) {
         console.error(error.message);
+        await bot.api.sendMessage(errorTrackerChat, `obtainData() - ОШИБКА: ${error.message}`);
     }
 };
 
@@ -183,8 +195,9 @@ async function getNewDate(apiKey) {
 
             console.log(`Новая дата ${newDateString} скачана, старая дата ${twoDaysAgoString} удалена`);
         }
-    } catch (err) {
-        console.error('Error:', err);
+    } catch (error) {
+        console.error('Error:', error);
+        await bot.api.sendMessage(errorTrackerChat, `getNewDate() - ОШИБКА: ${error.message}`);
     }
 }
 
