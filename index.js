@@ -18,6 +18,7 @@ const { addUser,
 
 const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap, menuKeyboardGroup } = require('./utilities/keyboards.js') 
 
+const apiKey = process.env.AZBYKA_API_KEY
 const errorTrackerChat = process.env.ERROR_TRACKER
 /* 
 ЗАПРОС ДАННЫХ С АЗБУКИ 
@@ -25,7 +26,7 @@ const errorTrackerChat = process.env.ERROR_TRACKER
 
 // ОБНОВЛЕНИЕ ТОКЕНА КАЖДЫЕ 28 ДНЕЙ
 refreshAzbykaToken();
-schedule.scheduleJob('0 0 0 */28 * *', async () => {
+schedule.scheduleJob('* * * */28 * *', async () => {
    try {
       await refreshAzbykaToken();
       console.log('API токен обновлен');
@@ -39,7 +40,7 @@ schedule.scheduleJob('0 0 0 */28 * *', async () => {
 restoreSchedules();
 // СКАЧИВАЕМ ДАННЫЕ в 0-00-05 ("5 0 0 * * *"), запись в файл 
  schedule.scheduleJob("5 0 0 * * *", () => {
- getNewDate();
+ getNewDate(apiKey);
 });
 
 
