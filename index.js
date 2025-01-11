@@ -5,7 +5,7 @@ const { getNewDate } = require('./functions/obtainData.js');
 const { cancelSchedule,
   scheduleMessage,
   saveSchedules,
-  restoreSchedules } = require('./functions/sendMessage.js');
+  scheduleAllUsers } = require('./functions/sendMessage.js');
 
 const refreshAzbykaToken = require('./utilities/refreshToken');
 
@@ -36,9 +36,9 @@ schedule.scheduleJob('* * * */28 * *', async () => {
   }
 });
 
-// восстанавливаем расписания из schedule.json
-restoreSchedules();
-// СКАЧИВАЕМ ДАННЫЕ в 0-00-05 ("5 0 0 * * *"), запись в файл 
+// восстанавливаем расписания из БД
+scheduleAllUsers();
+// СКАЧИВАЕМ ДАННЫЕ в 0-00-05 ("5 0 0 * * *"), запись в БД 
  schedule.scheduleJob("5 0 0 * * *", () => {
  getNewDate(apiKey);
 });
