@@ -29,14 +29,13 @@ async function obtainData(year, month, day, apiKey) {
                 if (!response.ok) {
                     await bot.api.sendMessage(errorTrackerChat, `getSaintsFromAzbyka() - Response status ${year}-${month}-${day}: ${response.status} --- ${await response.text()}`);
                     throw new Error(`API DAY - Response status: ${response.status} --- ${await response.text()}`);
-                    
+
                 }
                 const json = await response.json();
                 return JSON.stringify(json, null, 2);
             } catch (error) {
                 console.error('Error:', error.message);
                 await bot.api.sendMessage(errorTrackerChat, `getSaintsFromAzbyka() - ОШИБКА: ${error.message}`);
-                setTimeout(() => getSaintsFromAzbyka(), 3000000);
             }
         }
 
@@ -59,7 +58,6 @@ async function obtainData(year, month, day, apiKey) {
             } catch (error) {
                 await bot.api.sendMessage(errorTrackerChat, `getTextsFromAzbyka() - ОШИБКА: ${error.message}`);
                 console.error(error.message);
-                setTimeout(() => getTextsFromAzbyka(), 3000000);
             }
         }
         // фильтруем большой json и достаем id текста с id 1 (где содержатся сегодняшние чтения)
@@ -73,9 +71,7 @@ async function obtainData(year, month, day, apiKey) {
         async function getTodayBibleReading() {
             let jsonWithTextIds = await getTextsFromAzbyka(); // вытащили большой JSON со всеми айди сегодняшними
             let todayBibleId = getTextIdsWithType1(jsonWithTextIds); // вытащили сам айди текста нужного
-            console.log(todayBibleId + ' todayBibleId');
             const url = `https://azbyka.ru/days/api/texts/${todayBibleId.join()}`; // array превратили в string
-            console.log(url + ' url')
             try {
                 const response = await fetch(url, {
                     headers: {
@@ -93,7 +89,6 @@ async function obtainData(year, month, day, apiKey) {
             } catch (error) {
                 await bot.api.sendMessage(errorTrackerChat, `getTodayBibleReading() - ОШИБКА: ${error.message}`);
                 console.error(error.message);
-                setTimeout(() => getTodayBibleReading(), 3000000);
             }
         }
         // cобственно экшен, собираем данные предыдущими функциями, делаем из них непосредственно сообщение
@@ -161,6 +156,11 @@ ${arrayOfSaints.join('\n')}
         await bot.api.sendMessage(errorTrackerChat, `obtainData() - ОШИБКА: ${error.message}`);
     }
 };
+/* На богослужениях в храме будут читаться:
+<i>{$texts}</i>
+                
+Все тексты в одном месте можно прочесть <b><u><a href="https://azbyka.ru/biblia/days/${year}-${month}-${day}">по этой ссылке.</a></u></b>` */
+
 
 /* 
     -------

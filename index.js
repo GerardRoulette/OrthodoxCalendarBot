@@ -16,7 +16,7 @@ const { addUser,
   getMessageByDate,
   getUserSettings } = require('./db/db.js');
 
-const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap, menuKeyboardGroup } = require('./utilities/keyboards.js') 
+const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap, menuKeyboardGroup } = require('./utilities/keyboards.js')
 
 const apiKey = process.env.AZBYKA_API_KEY
 const errorTrackerChat = process.env.ERROR_TRACKER
@@ -27,20 +27,20 @@ const errorTrackerChat = process.env.ERROR_TRACKER
 // ОБНОВЛЕНИЕ ТОКЕНА КАЖДЫЕ 28 ДНЕЙ
 refreshAzbykaToken();
 schedule.scheduleJob('* * * */28 * *', async () => {
-   try {
-      await refreshAzbykaToken();
-      console.log('API токен обновлен');
+  try {
+    await refreshAzbykaToken();
+    console.log('API токен обновлен');
   } catch (error) {
-            await bot.api.sendMessage(errorTrackerChat, `ОШИБКА ПРИ ОБНОВЛЕНИИ АПИ ТОКЕНА АЗБУКИ: ${error.message}`);
-           console.error('ОШИБКА ПРИ ОБНОВЛЕНИИ API ТОКЕНА: ', error.message);
+    await bot.api.sendMessage(errorTrackerChat, `ОШИБКА ПРИ ОБНОВЛЕНИИ АПИ ТОКЕНА АЗБУКИ: ${error.message}`);
+    console.error('ОШИБКА ПРИ ОБНОВЛЕНИИ API ТОКЕНА: ', error.message);
   }
 });
 
 // восстанавливаем расписания из БД
 scheduleAllUsers();
 // СКАЧИВАЕМ ДАННЫЕ в 0-00-05 ("5 0 0 * * *"), запись в БД 
- schedule.scheduleJob("5 0 0 * * *", () => {
- getNewDate(apiKey);
+schedule.scheduleJob("5 0 0 * * *", () => {
+  getNewDate(apiKey);
 });
 
 
@@ -91,7 +91,7 @@ bot.command('start', async (ctx) => {
   }
   );
   await addUser(ctx.chat.id, userInfo, chatType);
-  scheduleMessage(ctx.chat.id, '3', '8:30') 
+  scheduleMessage(ctx.chat.id, '3', '8:30')
   saveSchedules();
 });
 
