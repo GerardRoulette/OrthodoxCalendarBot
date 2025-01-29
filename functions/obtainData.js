@@ -177,23 +177,29 @@ async function getNewDate(apiKey) {
         // вычисляем новую дату
         const newDate = new Date(currentDate);
         newDate.setDate(currentDate.getDate() + 7);
-        const newDateString = newDate.toISOString().split('T')[0];
-        // если ее нет в базе, то скачаем
-        if (!latestDate || newDateString > latestDate) {
-            const year = newDate.getFullYear();
-            const month = newDate.getMonth() + 1;
-            const day = newDate.getDate();
+        const year = newDate.getFullYear();
+        const month = newDate.getMonth() + 1;
+        const day = newDate.getDate();
+        const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        // вычисляем устаревшую дату
+        const outdated = new Date(currentDate);
+        outdated.setDate(currentDate.getDate() - 2);
+        const outdatedYear = outdated.getFullYear();
+        const outdatedMonth = outdated.getMonth() + 1;
+        const outdatedDay = outdated.getDate();
+        const formattedOutdated = `${outdatedYear}-${String(outdatedMonth).padStart(2, '0')}-${String(outdatedDay).padStart(2, '0')}`;
+
+        // если новой даты нет в базе, то скачаем
+        if (!latestDate || formattedDate > latestDate) {
 
             const message = await obtainData(year, month, day, apiKey);
-            await updateData(newDateString, message);
+            await updateData(formattedDate, message);
 
             // удаляем устаревшую дату
-            const twoDaysAgo = new Date(currentDate);
-            twoDaysAgo.setDate(currentDate.getDate() - 2);
-            const twoDaysAgoString = twoDaysAgo.toISOString().split('T')[0];
-            await deleteOutdatedData(twoDaysAgoString);
+            await deleteOutdatedData(formattedOutdated);
 
-            console.log(`Новая дата ${newDateString} скачана, старая дата ${twoDaysAgoString} удалена`);
+            console.log(`Новая дата ${formattedDate} скачана, старая дата ${formattedOutdated} удалена`);
         }
     } catch (error) {
         console.error('Error:', error);
