@@ -1,11 +1,14 @@
 require('dotenv').config();
 const { bot } = require('./utilities/bot.js')
+
+const dns = require('dns');
+
 const schedule = require("node-schedule");
 const { getNewDate } = require('./functions/obtainData.js');
 const { cancelSchedule,
   scheduleMessage,
   saveSchedules,
-  restoreSchedules } = require('./functions/sendMessage.js');
+  scheduleAllUsers } = require('./functions/sendMessage.js');
 
 const refreshAzbykaToken = require('./utilities/refreshToken');
 
@@ -16,29 +19,38 @@ const { addUser,
   getMessageByDate,
   getUserSettings } = require('./db/db.js');
 
-const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap, menuKeyboardGroup } = require('./utilities/keyboards.js') 
+const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, timeZoneKeyboardThree, timeZoneMap, menuKeyboardGroup } = require('./utilities/keyboards.js')
+
+
+
+const apiKey = process.env.AZBYKA_API_KEY
+const errorTrackerChat = process.env.ERROR_TRACKER
+
+dns.setDefaultResultOrder('ipv4first');
+
 
 /* 
 ЗАПРОС ДАННЫХ С АЗБУКИ 
 */
 
-// ОБНОВЛЕНИЕ ТОКЕНА КАЖДЫЕ 29 ДНЕЙ
+// ОБНОВЛЕНИЕ ТОКЕНА КАЖДЫЕ 28 ДНЕЙ
+refreshAzbykaToken();
+// schedule.scheduleJob('* * * */28 * *', async () => {
+//  try {
+//    await refreshAzbykaToken();
+//    console.log('API токен обновлен');
+//    await bot.api.sendMessage(errorTrackerChat, `ТОКЕН ОБНОВЛЕН`);
+// } catch (error) {
+//    await bot.api.sendMessage(errorTrackerChat, `ОШИБКА ПРИ ОБНОВЛЕНИИ АПИ ТОКЕНА АЗБУКИ: ${error.message}`);
+//    console.error('ОШИБКА ПРИ ОБНОВЛЕНИИ API ТОКЕНА: ', error.message);
+//  }
+// });
 
-schedule.scheduleJob('0 0 0 */29 * *', async () => {
-   try {
-      await refreshAzbykaToken();
-      console.log('API токен обновлен');
-  } catch (error) {
-           console.error('ОШИБКА ПРИ ОБНОВЛЕНИИ API ТОКЕНА: ', error.message);
-  }
-});
-
-// восстанавливаем расписания из schedule.json
-restoreSchedules();
-
-// СКАЧИВАЕМ ДАННЫЕ в 0-00-05 ("5 0 0 * * *"), запись в файл 
- schedule.scheduleJob("5 0 0 * * *", () => {
- getNewDate();
+// восстанавливаем расписания из БД
+scheduleAllUsers();
+// СКАЧИВАЕМ ДАННЫЕ в 0-00-05 ("5 0 0 * * *"), запись в БД 
+schedule.scheduleJob("5 0 0 * * *", () => {
+  getNewDate(apiKey);
 });
 
 
@@ -65,15 +77,7 @@ bot.command('start', async (ctx) => {
 Если вы хотите изменить время или часовой пояс - отправьте в чат команду /setup и следуйте инструкциям.
 Если вы хотите получить календарную информацию прямо сейчас - отправьте в чат команду /sendnow
     
-Бота можно использовать в групповых чатах. Инструкции можно посмотреть в меню по команде /setup
-    
-<b>ПРОШУ ИМЕТЬ ВВИДУ СЛЕДУЮЩЕЕ
-В НАСТОЯЩЕЕ ВРЕМЯ БОТ НАХОДИТСЯ В РАЗРАБОТКЕ. ВОЗМОЖНЫ ОШИБКИ И СБОИ.
-БОТ ЕЩЕ НЕ АДАПТИРОВАН К БОЛЬШИМ НАГРУЗКАМ, ПРОСЬБА НЕ РАСПРОСТРАНЯТЬ
-</b>
-(я скажу когда будет можно)
-    
-По всем вопросам и предложениям просьба связываться с @kvasov1`
+Бота можно использовать в групповых чатах. Инструкции можно посмотреть в меню по команде /setup`
   } else {
     userInfo = `Group Name: ${ctx.chat.title} // Admin @${ctx.from.username} // Group ID: ${ctx.chat.id}`;
     chatType = 'GROUP';
@@ -82,15 +86,7 @@ bot.command('start', async (ctx) => {
     
 <b><u>Теперь этот бот будет отпраавлять вам календарную информацию в 8-30 утра по московскому времени.</u></b>
 Если вы хотите изменить время или часовой пояс - отправьте в чат команду /setup@OrthodoxCalendar_Bot и следуйте инструкциям (настройки доступны только администраторам)
-Если вы хотите получить календарную информацию прямо сейчас - отправьте в чат команду /sendnow@OrthodoxCalendar_Bot (только администраторы)
-    
-<b>ПРОШУ ИМЕТЬ ВВИДУ СЛЕДУЮЩЕЕ
-В НАСТОЯЩЕЕ ВРЕМЯ БОТ НАХОДИТСЯ В РАЗРАБОТКЕ. ВОЗМОЖНЫ ОШИБКИ И СБОИ.
-БОТ ЕЩЕ НЕ АДАПТИРОВАН К БОЛЬШИМ НАГРУЗКАМ, ПРОСЬБА НЕ РАСПРОСТРАНЯТЬ
-</b>
-(я скажу когда будет можно)
-    
-По всем вопросам и предложениям просьба связываться с @kvasov1`
+Если вы хотите получить календарную информацию прямо сейчас - отправьте в чат команду /sendnow@OrthodoxCalendar_Bot (только администраторы)`
   }
   await ctx.reply( // приветственное сообщение
     greeting, {
@@ -105,7 +101,7 @@ bot.command('start', async (ctx) => {
   }
   );
   await addUser(ctx.chat.id, userInfo, chatType);
-  scheduleMessage(ctx.chat.id, '3', '8:30') 
+  scheduleMessage(ctx.chat.id, '3', '8:30')
   saveSchedules();
 });
 

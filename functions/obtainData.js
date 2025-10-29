@@ -1,7 +1,9 @@
 require('dotenv').config({ path: '../.env' });
 const sanitizeHtml = require('sanitize-html')
 const { updateData, deleteOutdatedData, getLatestDate } = require('../db/db.js');
+const { bot } = require('../utilities/bot.js')
 
+const errorTrackerChat = process.env.ERROR_TRACKER
 /* 
     -------
     ФУНКЦИИ ДЛЯ РАБОТЫ С API АЗБУКИ 
@@ -25,13 +27,25 @@ async function obtainData(year, month, day, apiKey) {
                     }
                 });
                 if (!response.ok) {
-                    throw new Error(`API DAY - Response status: ${response.status} --- ${await response.text()}`);
+                    const responseText = await response.text();
+                    const maxLength = 4000;
+                    const truncatedResponse = responseText.length > maxLength
+                        ? responseText.substring(0, maxLength) + '... (truncated)'
+                        : responseText;
+                    await bot.api.sendMessage(errorTrackerChat, `getSaintsFromAzbyka() - Response status ${year}-${month}-${day}: ${response.status} --- ${truncatedResponse}`);
+                    throw new Error(`API DAY - Response status: ${response.status} --- ${responseText}`);
+
                 }
                 const json = await response.json();
                 return JSON.stringify(json, null, 2);
             } catch (error) {
                 console.error('Error:', error.message);
-                setTimeout(() => getSaintsFromAzbyka(), 3000000);
+                const maxLength = 4000; // Leave some buffer
+                const errorMessage = error.message.length > maxLength
+                    ? error.message.substring(0, maxLength) + '... (truncated)'
+                    : error.message;
+                await bot.api.sendMessage(errorTrackerChat, `getSaintsFromAzbyka() - ОШИБКА: ${errorMessage}`);
+                throw error; // Re-throw to be handled by parent
             }
         }
 
@@ -45,14 +59,25 @@ async function obtainData(year, month, day, apiKey) {
                     }
                 });
                 if (!response.ok) {
-                    throw new Error(`CACHE DATE - Response status: ${response.status} --- ${await response.text()}`);
+                    const responseText = await response.text();
+                    const maxLength = 4000;
+                    const truncatedResponse = responseText.length > maxLength
+                        ? responseText.substring(0, maxLength) + '... (truncated)'
+                        : responseText;
+                    await bot.api.sendMessage(errorTrackerChat, `getTextsFromAzbyka() - Response status ${year}-${month}-${day}: ${response.status} --- ${truncatedResponse}`);
+                    throw new Error(`CACHE DATE - Response status: ${response.status} --- ${responseText}`);
                 }
 
                 const json = await response.json();
                 return await json; // просто возвращаем json, чтобы его распилить и достать текст с id 1
             } catch (error) {
+                const maxLength = 4000; // Leave some buffer
+                const errorMessage = error.message.length > maxLength
+                    ? error.message.substring(0, maxLength) + '... (truncated)'
+                    : error.message;
+                await bot.api.sendMessage(errorTrackerChat, `getTextsFromAzbyka() - ОШИБКА: ${errorMessage}`);
                 console.error(error.message);
-                setTimeout(() => getTextsFromAzbyka(), 3000000);
+                throw error; // Re-throw to be handled by parent
             }
         }
         // фильтруем большой json и достаем id текста с id 1 (где содержатся сегодняшние чтения)
@@ -74,15 +99,27 @@ async function obtainData(year, month, day, apiKey) {
                     }
                 });
                 if (!response.ok) {
-                    throw new Error(`TEXTS - Response status: ${response.status} --- ${await response.text()}`);
+                    const responseText = await response.text();
+                    const maxLength = 4000;
+                    const truncatedResponse = responseText.length > maxLength
+                        ? responseText.substring(0, maxLength) + '... (truncated)'
+                        : responseText;
+                    await bot.api.sendMessage(errorTrackerChat, `getTodayBibleReading() - Response status bible Id --- ${todayBibleId.join()} --- : ${response.status} --- ${truncatedResponse}`);
+                    throw new Error(`TEXTS - Response status: ${response.status} --- ${responseText}`);
                 }
 
                 const json = await response.json();
                 return JSON.stringify(json, null, 2)
 
             } catch (error) {
+                const maxLength = 4000; // Leave some buffer
+                const errorMessage = error.message.length > maxLength
+                    ? error.message.substring(0, maxLength) + '... (truncated)'
+                    : error.message;
+
+                await bot.api.sendMessage(errorTrackerChat, `getTodayBibleReading() - ОШИБКА: ${errorMessage}`);
                 console.error(error.message);
-                setTimeout(() => getTodayBibleReading(), 3000000);
+                throw error; // Re-throw to be handled by parent
             }
         }
         // cобственно экшен, собираем данные предыдущими функциями, делаем из них непосредственно сообщение
@@ -147,8 +184,19 @@ ${arrayOfSaints.join('\n')}
 
     } catch (error) {
         console.error(error.message);
+        const maxLength = 4000; // Leave some buffer
+        const errorMessage = error.message.length > maxLength
+            ? error.message.substring(0, maxLength) + '... (truncated)'
+            : error.message;
+
+        await bot.api.sendMessage(errorTrackerChat, `obtainData() - ОШИБКА: ${errorMessage}`);
     }
 };
+/* На богослужениях в храме будут читаться:
+<i>{$texts}</i>
+                
+Все тексты в одном месте можно прочесть <b><u><a href="https://azbyka.ru/biblia/days/${year}-${month}-${day}">по этой ссылке.</a></u></b>` */
+
 
 /* 
     -------
@@ -165,26 +213,37 @@ async function getNewDate(apiKey) {
         // вычисляем новую дату
         const newDate = new Date(currentDate);
         newDate.setDate(currentDate.getDate() + 7);
-        const newDateString = newDate.toISOString().split('T')[0];
-        // если ее нет в базе, то скачаем
-        if (!latestDate || newDateString > latestDate) {
-            const year = newDate.getFullYear();
-            const month = newDate.getMonth() + 1;
-            const day = newDate.getDate();
+        const year = newDate.getFullYear();
+        const month = newDate.getMonth() + 1;
+        const day = newDate.getDate();
+        const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        // вычисляем устаревшую дату
+        const outdated = new Date(currentDate);
+        outdated.setDate(currentDate.getDate() - 2);
+        const outdatedYear = outdated.getFullYear();
+        const outdatedMonth = outdated.getMonth() + 1;
+        const outdatedDay = outdated.getDate();
+        const formattedOutdated = `${outdatedYear}-${String(outdatedMonth).padStart(2, '0')}-${String(outdatedDay).padStart(2, '0')}`;
+
+        // если новой даты нет в базе, то скачаем
+        if (!latestDate || formattedDate > latestDate) {
 
             const message = await obtainData(year, month, day, apiKey);
-            await updateData(newDateString, message);
+            await updateData(formattedDate, message);
 
             // удаляем устаревшую дату
-            const twoDaysAgo = new Date(currentDate);
-            twoDaysAgo.setDate(currentDate.getDate() - 2);
-            const twoDaysAgoString = twoDaysAgo.toISOString().split('T')[0];
-            await deleteOutdatedData(twoDaysAgoString);
+            await deleteOutdatedData(formattedOutdated);
 
-            console.log(`Новая дата ${newDateString} скачана, старая дата ${twoDaysAgoString} удалена`);
+            console.log(`Новая дата ${formattedDate} скачана, старая дата ${formattedOutdated} удалена`);
         }
-    } catch (err) {
-        console.error('Error:', err);
+    } catch (error) {
+        console.error('Error:', error);
+        const maxLength = 4000; // Leave some buffer
+        const errorMessage = error.message.length > maxLength
+            ? error.message.substring(0, maxLength) + '... (truncated)'
+            : error.message;
+        await bot.api.sendMessage(errorTrackerChat, `getNewDate() - ОШИБКА: ${errorMessage}`);
     }
 }
 

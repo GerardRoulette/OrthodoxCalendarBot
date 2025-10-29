@@ -40,6 +40,7 @@ async function refreshAzbykaToken() {
     }
 }
 
+refreshAzbykaToken();
 
 module.exports = refreshAzbykaToken;
 

@@ -22,8 +22,9 @@ async function getAllData() {
         const year = date.getFullYear();
         const month = date.getMonth() + 1;
         const day = date.getDate();
+        const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const message = await obtainData(year, month, day, apiKey);
-        return { date: date.toISOString().split('T')[0], message }; // isostring -  2024-12-17T19:10:26.699Z
+        return { date: formattedDate, message }; 
     });
 
     // получили все сообщения
@@ -31,13 +32,17 @@ async function getAllData() {
 
     // записали в БД
     for (const { date, message } of dataArray) {
-        updateData(date, message);
+        await updateData(date, message);
     }
 
     //удаляем устаревшее если есть
-    const twoDaysAgo = new Date(currentDate);
-    twoDaysAgo.setDate(currentDate.getDate() - 2);
-    deleteOutdatedData(twoDaysAgo.toISOString().split('T')[0]);
+    const outdated = new Date(currentDate);
+    outdated.setDate(currentDate.getDate() - 2);
+    const outdatedYear = outdated.getFullYear();
+    const outdatedMonth = outdated.getMonth() + 1;
+    const outdatedDay = outdated.getDate();
+    const formattedOutdated = `${outdatedYear}-${String(outdatedMonth).padStart(2, '0')}-${String(outdatedDay).padStart(2, '0')}`;
+    await deleteOutdatedData(formattedOutdated);
 }
 
 getAllData()
