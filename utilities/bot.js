@@ -12,11 +12,11 @@ const dns = require('dns');
 // у хостера проблема с IPv6 и телеграмом, форсим ipv4
 dns.setDefaultResultOrder('ipv4first');
 
-// кастомный https агент
-const httpsAgent = new https.Agent({
-  family: 4,  // форсим ipv4
-  keepAlive: true
-});
+  // кастомный https агент
+  const httpsAgent = new https.Agent({
+    family: 4,  // форсим ipv4
+    keepAlive: true
+  });
 
 // конфиг бота
 const bot = new Bot(process.env.BOT_API_KEY, {
