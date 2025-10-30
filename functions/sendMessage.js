@@ -68,17 +68,33 @@ function scheduleMessage(chatId, timezone, preferredTime) {
   cancelSchedule(chatId);
 
   const job = schedule.scheduleJob(cronExpression, async () => {
-    // тут идея в том чтобы юзер получал календарь именно той даты которая ему нужна
-    const nowUTC = new Date(Date.now() - 3 * 60 * 60 * 1000); // Convert server time (UTC+3) to UTC
-    const userTime = new Date(nowUTC.getTime() + timezone * 60 * 60 * 1000);
-    const userDate = userTime.toISOString().split('T')[0]; // Extract YYYY-MM-DD format
-    const message = await getMessageByDate(userDate);
+    try {
+      // тут идея в том чтобы юзер получал календарь именно той даты которая ему нужна
+      const nowUTC = new Date(Date.now() - 3 * 60 * 60 * 1000); // Convert server time (UTC+3) to UTC
+      const userTime = new Date(nowUTC.getTime() + timezone * 60 * 60 * 1000);
+      const userDate = userTime.toISOString().split('T')[0]; // Extract YYYY-MM-DD format
+      const message = await getMessageByDate(userDate);
 
-    if (message) {
-      bot.api.sendMessage(chatId, message, {
-        parse_mode: 'HTML', 
-        disable_web_page_preview: true
-      });
+      if (message) {
+        await bot.api.sendMessage(chatId, message, {
+          parse_mode: 'HTML', 
+          disable_web_page_preview: true
+        });
+      }
+    } catch (error) {
+      console.error(`Error sending scheduled message to ${chatId}:`, error);
+      const errorTrackerChat = process.env.ERROR_TRACKER;
+      if (errorTrackerChat) {
+        try {
+          const maxLength = 4000;
+          const errorMessage = error.message.length > maxLength
+            ? error.message.substring(0, maxLength) + '... (truncated)'
+            : error.message;
+          await bot.api.sendMessage(errorTrackerChat, `sendMessage.js scheduled message to chatId ${chatId} - ОШИБКА: ${errorMessage}`);
+        } catch (sendError) {
+          console.error('Failed to send error notification:', sendError.message);
+        }
+      }
     }
   });
 
@@ -121,6 +137,18 @@ async function scheduleAllUsers() {
     console.log('scheduleAllUsers() - All user schedules have been created successfully!');
   } catch (error) {
     console.error('scheduleAllUsers() - Error creating schedules for all users:', error);
+    const errorTrackerChat = process.env.ERROR_TRACKER;
+    if (errorTrackerChat) {
+      try {
+        const maxLength = 4000;
+        const errorMessage = error.message.length > maxLength
+          ? error.message.substring(0, maxLength) + '... (truncated)'
+          : error.message;
+        await bot.api.sendMessage(errorTrackerChat, `sendMessage.js scheduleAllUsers() - ОШИБКА: ${errorMessage}`);
+      } catch (sendError) {
+        console.error('Failed to send error notification:', sendError.message);
+      }
+    }
   }
 }
 

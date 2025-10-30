@@ -1,11 +1,13 @@
 const fs = require('fs');
 const path = require('path');
+const { bot } = require('./bot.js');
 
 // Your email and password
 const email = process.env.AZBYKA_EMAIL; // Add this to your .env
 const password = process.env.AZBYKA_PASSWORD; // Add this to your .env
 
 const envFilePath = path.resolve(__dirname, '../.env'); // Adjust path if needed
+const errorTrackerChat = process.env.ERROR_TRACKER;
 
 async function refreshAzbykaToken() {
     try {
@@ -36,6 +38,17 @@ async function refreshAzbykaToken() {
         console.log('Updated AZBYKA_API_KEY in .env');
     } catch (error) {
         console.error('Error refreshing Azbyka token:', error.message);
+        if (errorTrackerChat) {
+            try {
+                const maxLength = 4000;
+                const errorMessage = error.message.length > maxLength
+                    ? error.message.substring(0, maxLength) + '... (truncated)'
+                    : error.message;
+                await bot.api.sendMessage(errorTrackerChat, `refreshAzbykaToken() - ОШИБКА: ${errorMessage}`);
+            } catch (sendError) {
+                console.error('Failed to send error notification:', sendError.message);
+            }
+        }
         throw error;
     }
 }

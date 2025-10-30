@@ -49,8 +49,13 @@ refreshAzbykaToken();
 // восстанавливаем расписания из БД
 scheduleAllUsers();
 // СКАЧИВАЕМ ДАННЫЕ в 0-00-05 ("5 0 0 * * *"), запись в БД 
-schedule.scheduleJob("5 0 0 * * *", () => {
-  getNewDate(apiKey);
+schedule.scheduleJob("5 0 0 * * *", async () => {
+  try {
+    await getNewDate(apiKey);
+  } catch (error) {
+    console.error('Error in scheduled getNewDate:', error);
+    // getNewDate already handles error reporting to errorTrackerChat
+  }
 });
 
 
@@ -62,15 +67,16 @@ schedule.scheduleJob("5 0 0 * * *", () => {
 
 // /START при первом запуске
 bot.command('start', async (ctx) => {
-  // запись в БД
-  let userInfo;
-  let chatType;
-  let greeting;
-  const date = new Date();
-  if (ctx.chat.type === 'private') {
-    userInfo = `Name: ${ctx.from.first_name || ''} ${ctx.from.last_name || ''} // Username: @${ctx.from.username || 'N/A'} // Lang: ${ctx.from.language_code || 'N/A'}`;
-    chatType = 'PRIVATE';
-    greeting = `Мир Вам!
+  try {
+    // запись в БД
+    let userInfo;
+    let chatType;
+    let greeting;
+    const date = new Date();
+    if (ctx.chat.type === 'private') {
+      userInfo = `Name: ${ctx.from.first_name || ''} ${ctx.from.last_name || ''} // Username: @${ctx.from.username || 'N/A'} // Lang: ${ctx.from.language_code || 'N/A'}`;
+      chatType = 'PRIVATE';
+      greeting = `Мир Вам!
 Этот бот ежедневно будет отправлять Вам информацию о сегодняшнем дне в календаре Русской Православной Церкви.
     
 <b><u>Теперь этот бот будет отправлять вам календарную информацию в 8-30 утра по московскому времени.</u></b>
@@ -78,31 +84,43 @@ bot.command('start', async (ctx) => {
 Если вы хотите получить календарную информацию прямо сейчас - отправьте в чат команду /sendnow
     
 Бота можно использовать в групповых чатах. Инструкции можно посмотреть в меню по команде /setup`
-  } else {
-    userInfo = `Group Name: ${ctx.chat.title} // Admin @${ctx.from.username} // Group ID: ${ctx.chat.id}`;
-    chatType = 'GROUP';
-    greeting = `Здравствуйте!
+    } else {
+      userInfo = `Group Name: ${ctx.chat.title} // Admin @${ctx.from.username} // Group ID: ${ctx.chat.id}`;
+      chatType = 'GROUP';
+      greeting = `Здравствуйте!
 Этот бот ежедневно будет отправлять Вам информацию о сегодняшнем дне в календаре Русской Православной Церкви.
     
 <b><u>Теперь этот бот будет отпраавлять вам календарную информацию в 8-30 утра по московскому времени.</u></b>
 Если вы хотите изменить время или часовой пояс - отправьте в чат команду /setup@OrthodoxCalendar_Bot и следуйте инструкциям (настройки доступны только администраторам)
 Если вы хотите получить календарную информацию прямо сейчас - отправьте в чат команду /sendnow@OrthodoxCalendar_Bot (только администраторы)`
+    }
+    await ctx.reply( // приветственное сообщение
+      greeting, {
+      parse_mode: "HTML",
+      disable_web_page_preview: true
+    }
+    );
+    await ctx.reply( // сегодняшнее сообщение
+      await getMessageByDate(date.toISOString().split('T')[0]), {
+      parse_mode: "HTML",
+      disable_web_page_preview: true
+    }
+    );
+    await addUser(ctx.chat.id, userInfo, chatType);
+    scheduleMessage(ctx.chat.id, '3', '8:30')
+    saveSchedules();
+  } catch (error) {
+    console.error('Error in /start command:', error);
+    const maxLength = 4000;
+    const errorMessage = error.message.length > maxLength
+      ? error.message.substring(0, maxLength) + '... (truncated)'
+      : error.message;
+    try {
+      await bot.api.sendMessage(errorTrackerChat, `index.js /start command - ОШИБКА: ${errorMessage}`);
+    } catch (sendError) {
+      console.error('Failed to send error notification:', sendError.message);
+    }
   }
-  await ctx.reply( // приветственное сообщение
-    greeting, {
-    parse_mode: "HTML",
-    disable_web_page_preview: true
-  }
-  );
-  await ctx.reply( // сегодняшнее сообщение
-    await getMessageByDate(date.toISOString().split('T')[0]), {
-    parse_mode: "HTML",
-    disable_web_page_preview: true
-  }
-  );
-  await addUser(ctx.chat.id, userInfo, chatType);
-  scheduleMessage(ctx.chat.id, '3', '8:30')
-  saveSchedules();
 });
 
 // /SENDNOW команда
@@ -131,6 +149,15 @@ bot.command('sendnow', async (ctx) => {
     });
   } catch (error) {
     console.error('Error in /sendnow command:', error);
+    const maxLength = 4000;
+    const errorMessage = error.message.length > maxLength
+      ? error.message.substring(0, maxLength) + '... (truncated)'
+      : error.message;
+    try {
+      await bot.api.sendMessage(errorTrackerChat, `index.js /sendnow command - ОШИБКА: ${errorMessage}`);
+    } catch (sendError) {
+      console.error('Failed to send error notification:', sendError.message);
+    }
     ctx.reply('ОШИБКА');
   }
 });
@@ -157,19 +184,20 @@ bot.command('setup', async (ctx) => {
 --------------------
 */
 bot.on('callback_query:data', async (ctx) => {
-  const data = ctx.callbackQuery.data;
-  // в случае если групповой чат а не личка, добавляем сообщение к интерфейсу.
-  const isGroupChat = ctx.chat.type === 'group' || ctx.chat.type === 'supergroup';
-  const adminMessage = isGroupChat ? ' <b>Имейте ввиду, что только администраторы группы могут менять настройки бота</b>' : '';
+  try {
+    const data = ctx.callbackQuery.data;
+    // в случае если групповой чат а не личка, добавляем сообщение к интерфейсу.
+    const isGroupChat = ctx.chat.type === 'group' || ctx.chat.type === 'supergroup';
+    const adminMessage = isGroupChat ? ' <b>Имейте ввиду, что только администраторы группы могут менять настройки бота</b>' : '';
 
-  if (timeZoneMap[data]) {
-    // выбор таймзоны (если есть в мапе)
-    const buttonText = timeZoneMap[data];
-    await updateTimezone(ctx.chat.id, data);
-    await ctx.callbackQuery.message.editText(`Ваш новый часовой пояс - ${buttonText}`);
-    const settings = await getUserSettings(ctx.chat.id);
-    await scheduleMessage(ctx.chat.id, settings.timezone, settings.preferredTime);
-  } else if (data === 'mainmenu') {
+    if (timeZoneMap[data]) {
+      // выбор таймзоны (если есть в мапе)
+      const buttonText = timeZoneMap[data];
+      await updateTimezone(ctx.chat.id, data);
+      await ctx.callbackQuery.message.editText(`Ваш новый часовой пояс - ${buttonText}`);
+      const settings = await getUserSettings(ctx.chat.id);
+      await scheduleMessage(ctx.chat.id, settings.timezone, settings.preferredTime);
+    } else if (data === 'mainmenu') {
     // обратно в главное меню
     await ctx.callbackQuery.message.editText(`Выберите пункт меню.${adminMessage}`, {
       parse_mode: "HTML",
@@ -235,6 +263,18 @@ bot.on('callback_query:data', async (ctx) => {
     await ctx.callbackQuery.message.editText('ОШИБКА');
   }
   await ctx.answerCallbackQuery();
+  } catch (error) {
+    console.error('Error in callback_query handler:', error);
+    const maxLength = 4000;
+    const errorMessage = error.message.length > maxLength
+      ? error.message.substring(0, maxLength) + '... (truncated)'
+      : error.message;
+    try {
+      await bot.api.sendMessage(errorTrackerChat, `index.js callback_query handler - ОШИБКА: ${errorMessage}`);
+    } catch (sendError) {
+      console.error('Failed to send error notification:', sendError.message);
+    }
+  }
 });
 
 // листенер назначения предпочитаемого времени (пункт меня запускает флаг true, если он true то вперед)
@@ -307,6 +347,15 @@ bot.on('my_chat_member', async (ctx) => {
       cancelSchedule(chatId);
     } catch (err) {
       console.error('Error during deleting:', err);
+      try {
+        const maxLength = 4000;
+        const errorMessage = err.message.length > maxLength
+          ? err.message.substring(0, maxLength) + '... (truncated)'
+          : err.message;
+        await bot.api.sendMessage(errorTrackerChat, `index.js my_chat_member handler for chatId ${chatId} - ОШИБКА: ${errorMessage}`);
+      } catch (sendError) {
+        console.error('Failed to send error notification:', sendError.message);
+      }
     }
   }
 });
