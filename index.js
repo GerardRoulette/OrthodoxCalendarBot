@@ -24,37 +24,78 @@ const { menuKeyboard, backKeyboard, timeZoneKeyboardOne, timeZoneKeyboardTwo, ti
 
 
 const apiKey = process.env.AZBYKA_API_KEY
-const errorTrackerChat = process.env.ERROR_TRACKER
+const errorTrackerChat = process.env.ERROR_TRACKER // сделал группу с ботом где получаю все ошибки
 
-dns.setDefaultResultOrder('ipv4first');
+dns.setDefaultResultOrder('ipv4first'); // у хостера проблема с Телеграмом и ipv6
+
+// задержка
+async function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// повторная попытка с увеличивающейся задержкой для ошибок API (например, 504/таймауты)
+async function retryWithBackoff(fn, { retries = 3, initialDelayMs = 2000 } = {}) {
+  let attempt = 0;
+  while (attempt < retries) {
+    try {
+      return await fn();
+    } catch (error) {
+      const message = error && error.message ? error.message : String(error);
+      const is504 = message.includes('504');
+      const isTimeout = message.toLowerCase().includes('timeout');
+      const shouldRetry = is504 || isTimeout;
+      attempt++;
+      if (!shouldRetry || attempt >= retries) {
+        throw error;
+      }
+      const delayMs = initialDelayMs * Math.pow(2, attempt - 1);
+      console.log(`getNewDate retry ${attempt}/${retries - 1} after ${delayMs}ms due to: ${message.substring(0, 200)}`);
+      await delay(delayMs);
+    }
+  }
+}
 
 
 /* 
 ЗАПРОС ДАННЫХ С АЗБУКИ 
 */
 
-// ОБНОВЛЕНИЕ ТОКЕНА КАЖДЫЕ 28 ДНЕЙ
+// ОБНОВЛЕНИЕ ТОКЕНА: выполняем сразу при старте и затем каждые ~28 дней
 refreshAzbykaToken();
-// schedule.scheduleJob('* * * */28 * *', async () => {
-//  try {
-//    await refreshAzbykaToken();
-//    console.log('API токен обновлен');
-//    await bot.api.sendMessage(errorTrackerChat, `ТОКЕН ОБНОВЛЕН`);
-// } catch (error) {
-//    await bot.api.sendMessage(errorTrackerChat, `ОШИБКА ПРИ ОБНОВЛЕНИИ АПИ ТОКЕНА АЗБУКИ: ${error.message}`);
-//    console.error('ОШИБКА ПРИ ОБНОВЛЕНИИ API ТОКЕНА: ', error.message);
-//  }
-// });
+schedule.scheduleJob('5 0 3 */28 * *', async () => {
+  try {
+    await retryWithBackoff(() => refreshAzbykaToken(), { retries: 3, initialDelayMs: 2000 });
+    console.log('API токен обновлен');
+    await bot.api.sendMessage(errorTrackerChat, `ТОКЕН ОБНОВЛЕН`);
+  } catch (error) {
+    const maxLength = 4000;
+    const msg = error.message && error.message.length > maxLength
+      ? error.message.substring(0, maxLength) + '... (truncated)'
+      : (error.message || String(error));
+    await bot.api.sendMessage(errorTrackerChat, `ОШИБКА ПРИ ОБНОВЛЕНИИ АПИ ТОКЕНА АЗБУКИ: ${msg}`);
+    console.error('ОШИБКА ПРИ ОБНОВЛЕНИИ API ТОКЕНА: ', msg);
+  }
+});
 
 // восстанавливаем расписания из БД
 scheduleAllUsers();
 // СКАЧИВАЕМ ДАННЫЕ в 0-00-05 ("5 0 0 * * *"), запись в БД 
 schedule.scheduleJob("5 0 0 * * *", async () => {
   try {
-    await getNewDate(apiKey);
+    await retryWithBackoff(() => getNewDate(apiKey), { retries: 3, initialDelayMs: 2000 });
+    console.log('Daily getNewDate completed successfully');
   } catch (error) {
-    console.error('Error in scheduled getNewDate:', error);
-    // getNewDate already handles error reporting to errorTrackerChat
+    console.error('Ошибка в плановой задаче getNewDate:', error);
+    // getNewDate уже отправляет структурированные ошибки; отправим финальное уведомление о сбое
+    try {
+      const maxLength = 4000;
+      const msg = error.message && error.message.length > maxLength
+        ? error.message.substring(0, maxLength) + '... (truncated)'
+        : (error.message || String(error));
+      await bot.api.sendMessage(errorTrackerChat, `index.js scheduled getNewDate final failure - ОШИБКА: ${msg}`);
+    } catch (sendError) {
+      console.error('Не удалось отправить финальное уведомление о сбое:', sendError.message);
+    }
   }
 });
 

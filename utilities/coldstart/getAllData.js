@@ -6,12 +6,12 @@ const { updateData, deleteOutdatedData } = require('../../db/db.js')
 let apiKey = process.env.AZBYKA_API_KEY;
 apiKey = apiKey.trim();
 
-// Helper function to delay execution
+// задержка выполнения
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Helper function to retry with exponential backoff
+// повторная попытка с экспоненциальной задержкой
 async function retryWithBackoff(fn, maxRetries = 3, initialDelay = 1000) {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
@@ -54,20 +54,20 @@ async function getAllData() {
         try {
             console.log(`Processing date ${i + 1}/${dates.length}: ${formattedDate}`);
             
-            // Retry with backoff for 504 errors
+            // повторяем запрос при 504 и таймаутах
             const message = await retryWithBackoff(async () => {
                 return await obtainData(year, month, day, apiKey);
             }, 3, 2000); // 3 retries, starting with 2 second delay
             
             dataArray.push({ date: formattedDate, message });
             
-            // Задержка между датами, чтобы не перегружать API
+            // задержка между датами, чтобы не перегружать API
             if (i < dates.length - 1) {
                 await delay(1000); // 1 секунда между датами
             }
         } catch (error) {
-            console.error(`Failed to process date ${formattedDate}:`, error.message);
-            // Continue with next date instead of failing completely
+            console.error(`Не удалось обработать дату ${formattedDate}:`, error.message);
+            // продолжаем со следующей датой
         }
     }
 
@@ -75,13 +75,13 @@ async function getAllData() {
     for (const { date, message } of dataArray) {
         try {
             await updateData(date, message);
-            console.log(`Saved data for ${date}`);
+            console.log(`Данные сохранены для ${date}`);
         } catch (error) {
-            console.error(`Failed to save data for ${date}:`, error.message);
+            console.error(`Не удалось сохранить данные для ${date}:`, error.message);
         }
     }
 
-    //удаляем устаревшее если есть
+    // удаляем устаревшее если есть
     const outdated = new Date(currentDate);
     outdated.setDate(currentDate.getDate() - 2);
     const outdatedYear = outdated.getFullYear();
@@ -89,7 +89,7 @@ async function getAllData() {
     const outdatedDay = outdated.getDate();
     const formattedOutdated = `${outdatedYear}-${String(outdatedMonth).padStart(2, '0')}-${String(outdatedDay).padStart(2, '0')}`;
     await deleteOutdatedData(formattedOutdated);
-    console.log('All data processed successfully');
+    console.log('Все данные обработаны успешно');
 }
 
 getAllData()

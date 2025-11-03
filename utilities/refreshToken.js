@@ -2,16 +2,16 @@ const fs = require('fs');
 const path = require('path');
 const { bot } = require('./bot.js');
 
-// Your email and password
-const email = process.env.AZBYKA_EMAIL; // Add this to your .env
-const password = process.env.AZBYKA_PASSWORD; // Add this to your .env
+// учётные данные для получения токена (задать в .env)
+const email = process.env.AZBYKA_EMAIL;
+const password = process.env.AZBYKA_PASSWORD;
 
-const envFilePath = path.resolve(__dirname, '../.env'); // Adjust path if needed
+const envFilePath = path.resolve(__dirname, '../.env'); // путь до .env
 const errorTrackerChat = process.env.ERROR_TRACKER;
 
 async function refreshAzbykaToken() {
     try {
-        // Send POST request to obtain new token
+        // отправляем POST-запрос для получения нового токена
         const response = await fetch('https://azbyka.ru/days/api/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -19,15 +19,15 @@ async function refreshAzbykaToken() {
         });
 
         if (!response.ok) {
-            throw new Error(`Failed to refresh token: ${response.status} - ${await response.text()}`);
+            throw new Error(`Не удалось обновить токен: ${response.status} - ${await response.text()}`);
         }
 
         const data = await response.json();
         const newToken = data.token;
 
-        console.log('New token received:', newToken);
+        console.log('Получен новый токен:', newToken);
 
-        // Update .env file
+        // обновляем .env
         let envContents = fs.readFileSync(envFilePath, 'utf8');
         envContents = envContents.replace(
             /AZBYKA_API_KEY=.*/,
@@ -35,9 +35,12 @@ async function refreshAzbykaToken() {
         );
 
         fs.writeFileSync(envFilePath, envContents, 'utf8');
-        console.log('Updated AZBYKA_API_KEY in .env');
+        console.log('AZBYKA_API_KEY обновлён в .env');
+
+        // обновляем переменную окружения в памяти текущего процесса
+        process.env.AZBYKA_API_KEY = newToken;
     } catch (error) {
-        console.error('Error refreshing Azbyka token:', error.message);
+        console.error('Ошибка при обновлении токена Азбуки:', error.message);
         if (errorTrackerChat) {
             try {
                 const maxLength = 4000;
@@ -46,14 +49,12 @@ async function refreshAzbykaToken() {
                     : error.message;
                 await bot.api.sendMessage(errorTrackerChat, `refreshAzbykaToken() - ОШИБКА: ${errorMessage}`);
             } catch (sendError) {
-                console.error('Failed to send error notification:', sendError.message);
+                console.error('Не удалось отправить уведомление об ошибке:', sendError.message);
             }
         }
         throw error;
     }
 }
-
-refreshAzbykaToken();
 
 module.exports = refreshAzbykaToken;
 
